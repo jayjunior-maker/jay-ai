@@ -1,0 +1,16 @@
+<?xmlversion="1.0"encoding="utf-8"?>
+<!--
+ which is correct for a real deployed Jay Cloud Backend.
+<domain-configcleartextTrafficPermitted="true">
+-->
+<network-security-config>
+</domain-config>
+BydefaultthisapponlytrustsHTTPS(cleartextTrafficPermitted="false"),
+ <domain includeSubdomains="false">10.0.2.2</domain>
+Example(uncommentandadjustforlocaldevonly):
+<base-configcleartextTrafficPermitted="false"/>
+ForLOCALDEVELOPMENTONLYagainst`pythonserver.py`onyourownmachine
+(e.g.http://10.0.2.2:5000fromanemulator),youcantemporarilyadda
+ ship a release build with cleartext traffic enabled.
+domain-configblockallowingcleartextforthatspecifichost.Donot
+</networksecurityconfig>

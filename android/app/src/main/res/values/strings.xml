@@ -1,20 +1,6 @@
-<?xmlversion="1.0"encoding="utf-8"?>
-Simpleplaceholderlaunchericon:asolidcircle.Nocopyrightedart,
-android:height="108dp"
-android:viewportHeight="108">
-android:width="108dp"
- file's contents; the manifest reference doesn't need to change.
-<vectorxmlns:android="http://schemas.android.com/apk/res/android"
-android:pathData="M54,54m-40,0a40,400,11,800a40,400,11,-800"/>
-android:pathData="M54,54m-14,0a14,140,11,280a14,140,11,-280"/>
--->
-android:fillColor="#6650A4"
-<path
- <path
- android:viewportWidth="108"
-android:fillColor="#FFFFFF"
-<!
-entirelyinXML),sonothingcanbe"missing"atbuildtime.
-noexternalimagefilesneeded(thisisavectordrawable,defined
-SwapthisoutforrealJaycharacterartlater;justreplacethis
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Jay AI</string>
+
+</resources>

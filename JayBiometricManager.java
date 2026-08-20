@@ -1,7 +1,6 @@
 package com.jay.ai;
 
 import android.app.Activity;
-import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.biometric.BiometricManager;
@@ -21,25 +20,21 @@ public class JayBiometricManager {
     }
 
     public boolean isAuthenticationAvailable() {
-
-        BiometricManager biometricManager =
+        BiometricManager manager =
                 BiometricManager.from(activity);
 
-        int result =
-                biometricManager.canAuthenticate(
-                        BiometricManager.Authenticators.BIOMETRIC_STRONG
-                                | BiometricManager.Authenticators.DEVICE_CREDENTIAL
-                );
+        int result = manager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG
+                        | BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        );
 
-        return result ==
-                BiometricManager.BIOMETRIC_SUCCESS;
+        return result == BiometricManager.BIOMETRIC_SUCCESS;
     }
 
     public void authenticate(
             final AuthenticationCallback callback) {
 
-        BiometricPrompt.AuthenticationCallback
-                authenticationCallback =
+        BiometricPrompt.AuthenticationCallback authCallback =
                 new BiometricPrompt.AuthenticationCallback() {
 
                     @Override
@@ -53,7 +48,6 @@ public class JayBiometricManager {
 
                     @Override
                     public void onAuthenticationFailed() {
-
                         if (callback != null) {
                             callback.onFailed();
                         }
@@ -62,40 +56,35 @@ public class JayBiometricManager {
                     @Override
                     public void onAuthenticationError(
                             int errorCode,
-                            @NonNull CharSequence errString) {
+                            @NonNull CharSequence errorString) {
 
                         if (callback != null) {
                             callback.onError(
                                     errorCode,
-                                    errString.toString()
+                                    errorString.toString()
                             );
                         }
                     }
                 };
 
-        BiometricPrompt biometricPrompt =
+        BiometricPrompt prompt =
                 new BiometricPrompt(
                         activity,
                         executor,
-                        authenticationCallback
+                        authCallback
                 );
 
-        BiometricPrompt.PromptInfo promptInfo =
+        BiometricPrompt.PromptInfo info =
                 new BiometricPrompt.PromptInfo.Builder()
                         .setTitle("Jay Admin Authentication")
-                        .setSubtitle(
-                                "Verify that you are the Jay Admin"
-                        )
+                        .setSubtitle("Verify your identity")
                         .setDescription(
-                                "Authentication is required to access Admin mode."
+                                "Authenticate to enter Jay Admin Mode."
                         )
-                        .setAllowedAuthenticators(
-                                BiometricManager.Authenticators.BIOMETRIC_STRONG
-                                        | BiometricManager.Authenticators.DEVICE_CREDENTIAL
-                        )
+                        .setNegativeButtonText("Cancel")
                         .build();
 
-        biometricPrompt.authenticate(promptInfo);
+        prompt.authenticate(info);
     }
 
     public interface AuthenticationCallback {
@@ -109,4 +98,4 @@ public class JayBiometricManager {
                 String message
         );
     }
-}
+            }

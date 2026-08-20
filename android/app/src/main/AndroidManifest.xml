@@ -2,21 +2,19 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission
-        android:name="android.permission.INTERNET" />
+    <!-- Jay needs microphone access for Talk -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <uses-permission
-        android:name="android.permission.RECORD_AUDIO" />
-
-    <uses-permission
-        android:name="android.permission.CAMERA" />
+    <!-- Required for internet/online Jay features -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
-        android:label="Jay AI"
+        android:label="Jay"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.NoActionBar">
+        android:theme="@style/AppTheme">
 
+        <!-- Jay main screen -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -32,6 +30,11 @@
             </intent-filter>
 
         </activity>
+
+        <!-- Jay Security screen -->
+        <activity
+            android:name=".JaySecurityActivity"
+            android:exported="false" />
 
     </application>
 

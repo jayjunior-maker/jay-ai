@@ -1,12 +1,8 @@
 package com.jay.ai;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.widget.Toast;
 
 public class JaySecurityManager {
@@ -17,15 +13,18 @@ public class JaySecurityManager {
 
     private final Context context;
     private final SharedPreferences preferences;
-    private final Handler handler;
+    private final JayBiometricManager biometricManager;
 
-    public JaySecurityManager(Context context) {
-        this.context = context;
-        this.preferences = context.getSharedPreferences(
+    public JaySecurityManager(Activity activity) {
+        this.context = activity;
+
+        preferences = context.getSharedPreferences(
                 PREFS_NAME,
                 Context.MODE_PRIVATE
         );
-        this.handler = new Handler(Looper.getMainLooper());
+
+        biometricManager =
+                new JayBiometricManager(activity);
     }
 
     // ---------------------------------------------------------
@@ -33,40 +32,60 @@ public class JaySecurityManager {
     // ---------------------------------------------------------
 
     public boolean isAdminAuthorized() {
-        return preferences.getBoolean(ADMIN_AUTHORIZED, false);
+        return preferences.getBoolean(
+                ADMIN_AUTHORIZED,
+                false
+        );
     }
 
-    public void setAdminAuthorized(boolean authorized) {
+    private void setAdminAuthorized(
+            boolean authorized
+    ) {
         preferences.edit()
-                .putBoolean(ADMIN_AUTHORIZED, authorized)
+                .putBoolean(
+                        ADMIN_AUTHORIZED,
+                        authorized
+                )
                 .apply();
     }
 
     // ---------------------------------------------------------
-    // GUEST MODE
+    // GUEST STATUS
     // ---------------------------------------------------------
 
     public boolean isGuestMode() {
-        return preferences.getBoolean(GUEST_MODE, false);
+        return preferences.getBoolean(
+                GUEST_MODE,
+                false
+        );
     }
 
-    public void setGuestMode(boolean enabled) {
+    private void setGuestMode(
+            boolean enabled
+    ) {
         preferences.edit()
-                .putBoolean(GUEST_MODE, enabled)
+                .putBoolean(
+                        GUEST_MODE,
+                        enabled
+                )
                 .apply();
     }
 
     // ---------------------------------------------------------
-    // REQUEST ADMIN AUTHORIZATION
+    // REAL ADMIN AUTHENTICATION
     // ---------------------------------------------------------
 
-    public void requestAdminAuthorization(final AuthorizationCallback callback) {
+    public void authenticateAdmin(
+            final AuthorizationCallback callback
+    ) {
 
-        if (!(context instanceof Activity)) {
+        if (!biometricManager
+                .isAuthenticationAvailable()) {
+
             Toast.makeText(
                     context,
-                    "Jay requires Admin authorization",
-                    Toast.LENGTH_SHORT
+                    "No supported biometric authentication is available.",
+                    Toast.LENGTH_LONG
             ).show();
 
             if (callback != null) {
@@ -76,51 +95,40 @@ public class JaySecurityManager {
             return;
         }
 
-        Activity activity = (Activity) context;
+        biometricManager.authenticate(
+                new JayBiometricManager.AuthenticationCallback() {
 
-        new AlertDialog.Builder(activity)
-                .setTitle("Jay Security")
-                .setMessage(
-                        "Admin authorization is required before another person can use this phone."
-                )
-                .setPositiveButton(
-                        "AUTHORIZE",
-                        (dialog, which) -> {
+                    @Override
+                    public void onSuccess() {
 
-                            setAdminAuthorized(true);
-                            setGuestMode(false);
+                        setAdminAuthorized(true);
+                        setGuestMode(false);
 
-                            Toast.makeText(
-                                    context,
-                                    "Admin authorization granted",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-
-                            if (callback != null) {
-                                callback.onAuthorized();
-                            }
+                        if (callback != null) {
+                            callback.onAuthorized();
                         }
-                )
-                .setNegativeButton(
-                        "DENY",
-                        (dialog, which) -> {
+                    }
 
-                            setAdminAuthorized(false);
-                            setGuestMode(true);
+                    @Override
+                    public void onFailed() {
 
-                            Toast.makeText(
-                                    context,
-                                    "Access denied",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-
-                            if (callback != null) {
-                                callback.onDenied();
-                            }
+                        if (callback != null) {
+                            callback.onDenied();
                         }
-                )
-                .setCancelable(false)
-                .show();
+                    }
+
+                    @Override
+                    public void onError(
+                            int errorCode,
+                            String message
+                    ) {
+
+                        if (callback != null) {
+                            callback.onDenied();
+                        }
+                    }
+                }
+        );
     }
 
     // ---------------------------------------------------------
@@ -128,14 +136,9 @@ public class JaySecurityManager {
     // ---------------------------------------------------------
 
     public void enterGuestMode() {
-        setGuestMode(true);
-        setAdminAuthorized(false);
 
-        Toast.makeText(
-                context,
-                "Jay Guest Mode enabled",
-                Toast.LENGTH_SHORT
-        ).show();
+        setAdminAuthorized(false);
+        setGuestMode(true);
     }
 
     // ---------------------------------------------------------
@@ -143,23 +146,18 @@ public class JaySecurityManager {
     // ---------------------------------------------------------
 
     public void exitGuestMode() {
-        setGuestMode(false);
 
-        Toast.makeText(
-                context,
-                "Jay Admin Mode restored",
-                Toast.LENGTH_SHORT
-        ).show();
+        setGuestMode(false);
     }
 
     // ---------------------------------------------------------
-    // RESET SECURITY STATE
+    // RESTRICTED MODE
     // ---------------------------------------------------------
 
-    public void resetSecurity() {
-        preferences.edit()
-                .clear()
-                .apply();
+    public void enterRestrictedMode() {
+
+        setAdminAuthorized(false);
+        setGuestMode(true);
     }
 
     // ---------------------------------------------------------
@@ -177,6 +175,17 @@ public class JaySecurityManager {
         }
 
         return "LOCKED";
+    }
+
+    // ---------------------------------------------------------
+    // RESET
+    // ---------------------------------------------------------
+
+    public void resetSecurity() {
+
+        preferences.edit()
+                .clear()
+                .apply();
     }
 
     // ---------------------------------------------------------

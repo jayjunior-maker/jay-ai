@@ -17,12 +17,12 @@ public class JayBrain {
     public String think(String input) {
 
         if (input == null || input.trim().isEmpty()) {
-            return "Niko hapa. Niambie unataka nifanye nini? 😊";
+            return "I'm here. Tell me what you would like me to do.";
         }
 
         String text = input.trim().toLowerCase(Locale.ROOT);
 
-        // Greetings
+        // Greetings — English, Kiswahili and Sheng
         if (containsAny(text,
                 "hello",
                 "hi",
@@ -32,17 +32,18 @@ public class JayBrain {
                 "niaje",
                 "sasa")) {
 
-            return "Habari! 😄 Mimi ni Jay. Niko hapa kukusaidia.";
+            return "Hello! I'm Jay. How can I help you?";
         }
 
-        // Identity
+        // Identity — English, Kiswahili and Sheng
         if (containsAny(text,
                 "who are you",
                 "what are you",
                 "wewe ni nani",
-                "jay ni nani")) {
+                "jay ni nani",
+                "jay ni nani wewe")) {
 
-            return "Mimi ni Jay 🤖 — local AI assistant yako. Naweza kufanya kazi hata bila internet.";
+            return "I'm Jay, your AI assistant. I can help you with phone controls, memory, business tasks and more.";
         }
 
         // Offline status
@@ -52,10 +53,10 @@ public class JayBrain {
                 "hakuna internet",
                 "bila internet")) {
 
-            return "Ndiyo 👍 Ninaweza kutumia local brain na local memory bila internet.";
+            return "Yes. I can work in local mode without an internet connection.";
         }
 
-        // Memory test
+        // Memory
         if (containsAny(text,
                 "remember",
                 "kumbuka",
@@ -64,7 +65,7 @@ public class JayBrain {
 
             database.saveMemory("last_request", input);
 
-            return "Sawa 👍 Nimehifadhi hiyo kwenye memory yangu ya ndani.";
+            return "Sure. I've saved that in my local memory.";
         }
 
         // Recall
@@ -77,17 +78,19 @@ public class JayBrain {
             String memory = database.getMemory("last_request");
 
             if (memory == null) {
-                return "Bado sina memory hiyo.";
+                return "I don't have anything saved in that memory yet.";
             }
 
-            return "Nakumbuka ulisema: " + memory;
+            return "I remember you said: " + memory;
         }
 
         // Settings
         if (containsAny(text,
                 "open settings",
                 "fungua settings",
-                "settings")) {
+                "fungua mipangilio",
+                "settings",
+                "mipangilio")) {
 
             return "OPEN_SETTINGS";
         }
@@ -97,7 +100,8 @@ public class JayBrain {
                 "open phone",
                 "open dialer",
                 "fungua simu",
-                "fungua dialer")) {
+                "fungua dialer",
+                "fungua phone")) {
 
             return "OPEN_PHONE";
         }
@@ -106,51 +110,49 @@ public class JayBrain {
         if (containsAny(text,
                 "open calendar",
                 "fungua calendar",
+                "fungua kalenda",
                 "kalenda")) {
 
             return "OPEN_CALENDAR";
         }
 
-        // Business
+        // Business / inventory
         if (containsAny(text,
                 "inventory",
                 "stock",
                 "stock iko",
                 "inventory iko",
-                "parts")) {
+                "parts",
+                "bidhaa",
+                "spares")) {
 
             return "OPEN_INVENTORY";
         }
 
-        // Technician
+        // Repairs
         if (containsAny(text,
                 "repair",
                 "repairs",
                 "repair job",
                 "matengenezo",
-                "phone repair")) {
+                "phone repair",
+                "karabati",
+                "ukarabati")) {
 
             return "OPEN_REPAIRS";
         }
 
-        // Languages
+        // Language questions
         if (containsAny(text,
                 "kiswahili",
-                "swahili")) {
-
-            return "Sawa 🇰🇪 Tunaweza kuongea Kiswahili.";
-        }
-
-        if (containsAny(text,
+                "swahili",
                 "sheng")) {
 
-            return "Kabisa bana 😎 Jay anaelewa Sheng pia.";
+            return "I understand English, Kiswahili and Sheng, but I will always respond in English.";
         }
 
-        // Generic local response
-        return "Nimekusikia 👍 Mimi ni Jay na niko kwenye local mode. "
-                + "Kwa sasa naweza kukusaidia na commands, memory, "
-                + "phone controls na business functions bila internet.";
+        // Generic response
+        return "I understand you. I'm currently running in local mode. I can help with commands, memory, phone controls and business functions without internet.";
     }
 
     private boolean containsAny(String text, String... words) {
@@ -163,4 +165,4 @@ public class JayBrain {
 
         return false;
     }
-          }
+        }

@@ -5,19 +5,19 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.os.Handler;
 import android.provider.Settings;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.Voice;
 import android.view.Gravity;
-import android.view.View;
 import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
@@ -25,18 +25,20 @@ public class MainActivity extends Activity {
     private JayBrain jayBrain;
     private JayDatabase database;
     private TextToSpeech tts;
+    private SpeechRecognizer speechRecognizer;
 
     private TextView responseView;
     private TextView jayAvatar;
     private TextView statusView;
 
-    private Handler animationHandler = new Handler();
+    private EditText input;
 
     private boolean speaking = false;
 
+    private static final int SPEECH_REQUEST = 1001;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
 
         jayBrain = new JayBrain(this);
@@ -44,6 +46,7 @@ public class MainActivity extends Activity {
 
         createInterface();
         initializeVoice();
+        initializeSpeechRecognition();
     }
 
     private void createInterface() {
@@ -67,10 +70,7 @@ public class MainActivity extends Activity {
 
         root.setBackground(background);
 
-        // TITLE
-
         TextView title = new TextView(this);
-
         title.setText("🤖 JAY AI");
         title.setTextSize(32);
         title.setTextColor(Color.WHITE);
@@ -78,39 +78,23 @@ public class MainActivity extends Activity {
 
         root.addView(title);
 
-        // STATUS
-
         statusView = new TextView(this);
-
-        statusView.setText(
-                "🧠 LOCAL MODE • ✈️ OFFLINE READY"
-        );
-
+        statusView.setText("🧠 LOCAL MODE • ✈️ OFFLINE READY");
         statusView.setTextSize(14);
         statusView.setTextColor(Color.CYAN);
         statusView.setGravity(Gravity.CENTER);
 
         root.addView(statusView);
 
-        // JAY AVATAR
-
         jayAvatar = new TextView(this);
-
         jayAvatar.setText("🤖");
         jayAvatar.setTextSize(75);
         jayAvatar.setGravity(Gravity.CENTER);
 
-        LinearLayout.LayoutParams avatarParams =
-                new LinearLayout.LayoutParams(
-                        -1,
-                        150
-                );
-
-        avatarParams.setMargins(0, 20, 0, 10);
-
-        root.addView(jayAvatar, avatarParams);
-
-        // RESPONSE AREA
+        root.addView(
+                jayAvatar,
+                new LinearLayout.LayoutParams(-1, 150)
+        );
 
         responseView = new TextView(this);
 
@@ -147,18 +131,19 @@ public class MainActivity extends Activity {
 
         root.addView(responseView, responseParams);
 
-        // TEXT INPUT ROW
+        // INPUT
 
-        LinearLayout inputRow =
-                new LinearLayout(this);
+        LinearLayout inputRow = new LinearLayout(this);
 
         inputRow.setOrientation(
                 LinearLayout.HORIZONTAL
         );
 
-        inputRow.setGravity(Gravity.CENTER_VERTICAL);
+        inputRow.setGravity(
+                Gravity.CENTER_VERTICAL
+        );
 
-        EditText input = new EditText(this);
+        input = new EditText(this);
 
         input.setHint("Ask Jay...");
         input.setTextColor(Color.WHITE);
@@ -178,24 +163,19 @@ public class MainActivity extends Activity {
         input.setBackground(inputBackground);
         input.setPadding(25, 0, 20, 0);
 
-        LinearLayout.LayoutParams inputParams =
+        inputRow.addView(
+                input,
                 new LinearLayout.LayoutParams(
                         0,
                         60,
                         1
-                );
-
-        inputParams.setMargins(0, 0, 10, 0);
-
-        inputRow.addView(input, inputParams);
-
-        // SEND BUTTON
+                )
+        );
 
         Button send = new Button(this);
 
         send.setText("SEND ➤");
         send.setTextColor(Color.WHITE);
-        send.setTextSize(14);
 
         GradientDrawable sendBackground =
                 new GradientDrawable();
@@ -208,61 +188,75 @@ public class MainActivity extends Activity {
 
         send.setBackground(sendBackground);
 
-        inputRow.addView(
-                send,
+        LinearLayout.LayoutParams sendParams =
                 new LinearLayout.LayoutParams(
                         110,
+                        60
+                );
+
+        sendParams.setMargins(10, 0, 0, 0);
+
+        inputRow.addView(send, sendParams);
+
+        root.addView(inputRow);
+
+        // TALK BUTTON
+
+        Button talk = new Button(this);
+
+        talk.setText("🎤 TALK");
+        talk.setTextColor(Color.WHITE);
+        talk.setTextSize(16);
+
+        GradientDrawable talkBackground =
+                new GradientDrawable();
+
+        talkBackground.setColor(
+                Color.rgb(180, 50, 180)
+        );
+
+        talkBackground.setCornerRadius(40);
+
+        talk.setBackground(talkBackground);
+
+        root.addView(
+                talk,
+                new LinearLayout.LayoutParams(
+                        -1,
                         60
                 )
         );
 
-        root.addView(inputRow);
-
         // STOP BUTTON
 
-        Button mute = new Button(this);
+        Button stop = new Button(this);
 
-        mute.setText("⏸ STOP JAY");
-        mute.setTextColor(Color.WHITE);
+        stop.setText("⏸ STOP JAY");
 
-        root.addView(mute);
+        root.addView(stop);
 
-        // SEND ACTION
+        // SEND
 
-        send.setOnClickListener(v -> {
+        send.setOnClickListener(v -> sendMessage());
 
-            String message =
-                    input.getText().toString().trim();
-
-            if (message.isEmpty()) {
-                return;
-            }
-
-            String answer =
-                    jayBrain.think(message);
-
-            handleCommand(
-                    message,
-                    answer
-            );
-
-            input.setText("");
-        });
-
-        // ENTER KEY
+        // ENTER
 
         input.setOnEditorActionListener(
                 (v, actionId, event) -> {
 
-                    send.performClick();
+                    sendMessage();
 
                     return true;
                 }
         );
 
+        // TALK
+
+        talk.setOnClickListener(v -> startListening());
+
         // STOP
 
-        mute.setOnClickListener(v -> {
+        stop.setOnClickListener(v -> {
 
             stopJay();
 
@@ -274,20 +268,48 @@ public class MainActivity extends Activity {
         setContentView(root);
     }
 
+    private void sendMessage() {
+
+        String message =
+                input.getText().toString().trim();
+
+        if (message.isEmpty()) {
+            return;
+        }
+
+        processMessage(message);
+
+        input.setText("");
+    }
+
+    private void processMessage(String message) {
+
+        statusView.setText(
+                "🧠 JAY IS THINKING..."
+        );
+
+        String answer =
+                jayBrain.think(message);
+
+        handleCommand(
+                message,
+                answer
+        );
+    }
+
     private void initializeVoice() {
 
         tts = new TextToSpeech(
                 this,
                 status -> {
 
-                    if (status == TextToSpeech.SUCCESS) {
+                    if (status ==
+                            TextToSpeech.SUCCESS) {
 
-                        int result =
-                                tts.setLanguage(
-                                        Locale.US
-                                );
+                        tts.setLanguage(
+                                Locale.US
+                        );
 
-                        // Prefer a natural English voice
                         try {
 
                             for (Voice voice :
@@ -310,11 +332,147 @@ public class MainActivity extends Activity {
         );
     }
 
+    private void initializeSpeechRecognition() {
+
+        if (SpeechRecognizer.isRecognitionAvailable(this)) {
+
+            speechRecognizer =
+                    SpeechRecognizer.createSpeechRecognizer(
+                            this
+                    );
+
+            speechRecognizer.setRecognitionListener(
+                    new android.speech.RecognitionListener() {
+
+                        @Override
+                        public void onReadyForSpeech(
+                                Bundle params) {
+
+                            statusView.setText(
+                                    "🎤 LISTENING..."
+                            );
+                        }
+
+                        @Override
+                        public void onBeginningOfSpeech() {
+                        }
+
+                        @Override
+                        public void onRmsChanged(
+                                float rmsdB) {
+                        }
+
+                        @Override
+                        public void onBufferReceived(
+                                byte[] buffer) {
+                        }
+
+                        @Override
+                        public void onEndOfSpeech() {
+
+                            statusView.setText(
+                                    "🧠 JAY IS THINKING..."
+                            );
+                        }
+
+                        @Override
+                        public void onError(int error) {
+
+                            statusView.setText(
+                                    "🎤 Couldn't hear you. Try again."
+                            );
+                        }
+
+                        @Override
+                        public void onResults(
+                                Bundle results) {
+
+                            ArrayList<String> matches =
+                                    results.getStringArrayList(
+                                            SpeechRecognizer.RESULTS_RECOGNITION
+                                    );
+
+                            if (matches != null
+                                    && !matches.isEmpty()) {
+
+                                String spokenText =
+                                        matches.get(0);
+
+                                input.setText(
+                                        spokenText
+                                );
+
+                                processMessage(
+                                        spokenText
+                                );
+
+                                input.setText("");
+                            }
+                        }
+
+                        @Override
+                        public void onPartialResults(
+                                Bundle partialResults) {
+                        }
+
+                        @Override
+                        public void onEvent(
+                                int eventType,
+                                Bundle params) {
+                        }
+                    }
+            );
+        }
+    }
+
+    private void startListening() {
+
+        if (speechRecognizer == null) {
+
+            statusView.setText(
+                    "Speech recognition isn't available."
+            );
+
+            return;
+        }
+
+        Intent intent =
+                new Intent(
+                        RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+                );
+
+        intent.putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+        );
+
+        // English output/recognition preference.
+        // Android may still recognize other languages
+        // depending on the installed speech service.
+
+        intent.putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE,
+                Locale.getDefault()
+        );
+
+        intent.putExtra(
+                RecognizerIntent.EXTRA_PROMPT,
+                "Talk to Jay"
+        );
+
+        speechRecognizer.startListening(intent);
+    }
+
     private void handleCommand(
             String userMessage,
             String answer) {
 
         if ("OPEN_SETTINGS".equals(answer)) {
+
+            database.saveConversation(
+                    userMessage,
+                    "Opening Settings."
+            );
 
             speak(
                     "Sure. Opening Settings."
@@ -331,21 +489,30 @@ public class MainActivity extends Activity {
 
         if ("OPEN_PHONE".equals(answer)) {
 
+            database.saveConversation(
+                    userMessage,
+                    "Opening the phone."
+            );
+
             speak(
                     "Sure. Opening the phone."
             );
 
-            Intent intent =
+            startActivity(
                     new Intent(
                             Intent.ACTION_DIAL
-                    );
-
-            startActivity(intent);
+                    )
+            );
 
             return;
         }
 
         if ("OPEN_CALENDAR".equals(answer)) {
+
+            database.saveConversation(
+                    userMessage,
+                    "Opening your calendar."
+            );
 
             speak(
                     "Sure. Opening your calendar."
@@ -364,6 +531,8 @@ public class MainActivity extends Activity {
 
             return;
         }
+
+        // ONLY ONE RESPONSE IS DISPLAYED HERE.
 
         responseView.setText(answer);
 
@@ -403,18 +572,20 @@ public class MainActivity extends Activity {
             return;
         }
 
-        Animation pulse =
+        AlphaAnimation pulse =
                 new AlphaAnimation(
                         0.35f,
                         1.0f
                 );
 
         pulse.setDuration(500);
+
         pulse.setRepeatMode(
-                Animation.REVERSE
+                AlphaAnimation.REVERSE
         );
+
         pulse.setRepeatCount(
-                Animation.INFINITE
+                AlphaAnimation.INFINITE
         );
 
         jayAvatar.startAnimation(pulse);
@@ -423,6 +594,47 @@ public class MainActivity extends Activity {
     private void stopJay() {
 
         speaking = false;
+
+        if (tts != null) {
+            tts.stop();
+        }
+
+        if (speechRecognizer != null) {
+            speechRecognizer.stopListening();
+        }
+
+        if (jayAvatar != null) {
+            jayAvatar.clearAnimation();
+            jayAvatar.setAlpha(1.0f);
+        }
+
+        if (statusView != null) {
+            statusView.setText(
+                    "🧠 LOCAL MODE • ✈️ OFFLINE READY"
+            );
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+
+        stopJay();
+
+        if (speechRecognizer != null) {
+            speechRecognizer.destroy();
+        }
+
+        if (tts != null) {
+            tts.shutdown();
+        }
+
+        if (database != null) {
+            database.close();
+        }
+
+        super.onDestroy();
+    }
+    } speaking = false;
 
         if (tts != null) {
             tts.stop();

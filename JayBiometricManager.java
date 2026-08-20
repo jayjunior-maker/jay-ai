@@ -19,7 +19,12 @@ public class JayBiometricManager {
         this.executor = ContextCompat.getMainExecutor(activity);
     }
 
+    // -----------------------------------------------------
+    // CHECK WHETHER BIOMETRIC AUTHENTICATION IS AVAILABLE
+    // -----------------------------------------------------
+
     public boolean isAuthenticationAvailable() {
+
         BiometricManager manager =
                 BiometricManager.from(activity);
 
@@ -31,71 +36,85 @@ public class JayBiometricManager {
         return result == BiometricManager.BIOMETRIC_SUCCESS;
     }
 
+    // -----------------------------------------------------
+    // AUTHENTICATION CALLBACK
+    // -----------------------------------------------------
+
+    public interface AuthenticationCallback {
+
+        void onAuthenticationSucceeded();
+
+        void onAuthenticationFailed();
+    }
+
+    // -----------------------------------------------------
+    // START AUTHENTICATION
+    // -----------------------------------------------------
+
     public void authenticate(
             final AuthenticationCallback callback) {
 
-        BiometricPrompt.AuthenticationCallback authCallback =
+        BiometricPrompt.AuthenticationCallback biometricCallback =
                 new BiometricPrompt.AuthenticationCallback() {
 
                     @Override
                     public void onAuthenticationSucceeded(
                             @NonNull BiometricPrompt.AuthenticationResult result) {
 
-                        if (callback != null) {
-                            callback.onSuccess();
-                        }
-                    }
+                        super.onAuthenticationSucceeded(result);
 
-                    @Override
-                    public void onAuthenticationFailed() {
                         if (callback != null) {
-                            callback.onFailed();
+                            callback.onAuthenticationSucceeded();
                         }
                     }
 
                     @Override
                     public void onAuthenticationError(
                             int errorCode,
-                            @NonNull CharSequence errorString) {
+                            @NonNull CharSequence errString) {
+
+                        super.onAuthenticationError(
+                                errorCode,
+                                errString
+                        );
 
                         if (callback != null) {
-                            callback.onError(
-                                    errorCode,
-                                    errorString.toString()
-                            );
+                            callback.onAuthenticationFailed();
+                        }
+                    }
+
+                    @Override
+                    public void onAuthenticationFailed() {
+
+                        super.onAuthenticationFailed();
+
+                        if (callback != null) {
+                            callback.onAuthenticationFailed();
                         }
                     }
                 };
 
-        BiometricPrompt prompt =
+        BiometricPrompt biometricPrompt =
                 new BiometricPrompt(
                         activity,
                         executor,
-                        authCallback
+                        biometricCallback
                 );
 
-        BiometricPrompt.PromptInfo info =
+        BiometricPrompt.PromptInfo promptInfo =
                 new BiometricPrompt.PromptInfo.Builder()
-                        .setTitle("Jay Admin Authentication")
+                        .setTitle("Jay Admin Security")
                         .setSubtitle("Verify your identity")
                         .setDescription(
-                                "Authenticate to enter Jay Admin Mode."
+                                "Use your fingerprint, face authentication, " +
+                                "or device security to verify that you are Jay's Admin."
                         )
-                        .setNegativeButtonText("Cancel")
+                        .setAllowedAuthenticators(
+                                BiometricManager.Authenticators.BIOMETRIC_STRONG
+                                        | BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                        )
                         .build();
 
-        prompt.authenticate(info);
+        biometricPrompt.authenticate(promptInfo);
     }
-
-    public interface AuthenticationCallback {
-
-        void onSuccess();
-
-        void onFailed();
-
-        void onError(
-                int errorCode,
-                String message
-        );
-    }
-            }
+        }

@@ -31,7 +31,23 @@ public class MainActivity extends Activity
     private TextView conversation;
     private EditText inputBox;
 
-    private final int SPEECH_REQUEST = 1001;
+    private boolean voiceReady = false;
+
+    /*
+     * JAY VOICE PROFILE
+     *
+     * Character : Deep, calm, confident
+     * Delivery  : Smooth and controlled
+     * Speed     : Moderate
+     * Tone      : Intelligent, warm, futuristic
+     * Emotion   : Natural
+     * Pauses    : Short and deliberate
+     *
+     * These values control Android TTS for now.
+     * A dedicated neural voice engine can replace this later.
+     */
+    private float jayPitch = 0.75f;
+    private float jaySpeed = 0.90f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,9 +66,9 @@ public class MainActivity extends Activity
         buildJayInterface();
     }
 
-    // ---------------------------------------------------------
+    // =========================================================
     // JAY INTERFACE
-    // ---------------------------------------------------------
+    // =========================================================
 
     private void buildJayInterface() {
 
@@ -71,7 +87,10 @@ public class MainActivity extends Activity
 
         root.setBackground(background);
 
+        // -----------------------------------------------------
         // TOP BAR
+        // -----------------------------------------------------
+
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
@@ -103,9 +122,11 @@ public class MainActivity extends Activity
 
         root.addView(topBar);
 
+        // -----------------------------------------------------
         // STATUS
-        jayStatus = new TextView(this);
+        // -----------------------------------------------------
 
+        jayStatus = new TextView(this);
         jayStatus.setText("● Jay online");
         jayStatus.setTextColor(Color.WHITE);
         jayStatus.setTextSize(15);
@@ -114,7 +135,10 @@ public class MainActivity extends Activity
 
         root.addView(jayStatus);
 
+        // -----------------------------------------------------
         // JAY CORE
+        // -----------------------------------------------------
+
         TextView jayCore = new TextView(this);
 
         jayCore.setText("J");
@@ -150,7 +174,10 @@ public class MainActivity extends Activity
 
         root.addView(jayCore, coreParams);
 
+        // -----------------------------------------------------
         // CONVERSATION
+        // -----------------------------------------------------
+
         ScrollView scrollView = new ScrollView(this);
 
         conversation = new TextView(this);
@@ -174,7 +201,10 @@ public class MainActivity extends Activity
 
         root.addView(scrollView, scrollParams);
 
-        // INPUT
+        // -----------------------------------------------------
+        // TEXT INPUT
+        // -----------------------------------------------------
+
         inputBox = new EditText(this);
 
         inputBox.setHint("Talk to Jay...");
@@ -184,7 +214,10 @@ public class MainActivity extends Activity
 
         root.addView(inputBox);
 
+        // -----------------------------------------------------
         // BUTTONS
+        // -----------------------------------------------------
+
         LinearLayout buttons =
                 new LinearLayout(this);
 
@@ -245,9 +278,9 @@ public class MainActivity extends Activity
         setContentView(root);
     }
 
-    // ---------------------------------------------------------
+    // =========================================================
     // SPEECH RECOGNITION
-    // ---------------------------------------------------------
+    // =========================================================
 
     private void setupSpeechRecognizer() {
 
@@ -303,7 +336,7 @@ public class MainActivity extends Activity
 
                         Toast.makeText(
                                 MainActivity.this,
-                                "I couldn't hear you. Try again.",
+                                "Jay couldn't hear you. Try again.",
                                 Toast.LENGTH_SHORT
                         ).show();
                     }
@@ -323,9 +356,16 @@ public class MainActivity extends Activity
                             String spokenText =
                                     matches.get(0);
 
-                            inputBox.setText(spokenText);
+                            /*
+                             * We process the spoken command directly.
+                             *
+                             * Jay does NOT say:
+                             * "I heard you say..."
+                             */
 
                             processMessage(spokenText);
+
+                            inputBox.setText("");
                         }
 
                         updateStatus("● Jay online");
@@ -381,11 +421,18 @@ public class MainActivity extends Activity
         speechRecognizer.startListening(intent);
     }
 
-    // ---------------------------------------------------------
+    // =========================================================
     // JAY MESSAGE PROCESSING
-    // ---------------------------------------------------------
+    // =========================================================
 
     private void processMessage(String message) {
+
+        if (message == null ||
+                message.trim().isEmpty()) {
+            return;
+        }
+
+        message = message.trim();
 
         addConversation(
                 "You: " + message
@@ -397,7 +444,7 @@ public class MainActivity extends Activity
         String response;
 
         if (lower.contains("hello") ||
-                lower.contains("hi") ||
+                lower.equals("hi") ||
                 lower.contains("hey")) {
 
             response =
@@ -418,11 +465,24 @@ public class MainActivity extends Activity
             response =
                     "Good night, Sir. Sleep well.";
 
-        } else {
+        } else if (lower.contains("how are you")) {
 
             response =
-                    "I heard you say: " + message
-                            + ". My online AI brain will be connected next.";
+                    "I'm operating normally, Sir. Ready when you are.";
+
+        } else {
+
+            /*
+             * IMPORTANT:
+             *
+             * Jay no longer repeats the user's words.
+             *
+             * This is currently a placeholder until the
+             * online AI provider is connected.
+             */
+
+            response =
+                    "I'm processing that, Sir. My online AI brain will be connected next.";
         }
 
         addConversation(
@@ -432,15 +492,27 @@ public class MainActivity extends Activity
         speak(response);
     }
 
-    // ---------------------------------------------------------
+    // =========================================================
     // JAY VOICE
-    // ---------------------------------------------------------
+    // =========================================================
 
     @Override
     public void onInit(int status) {
 
         if (status ==
                 TextToSpeech.SUCCESS) {
+
+            voiceReady = true;
+
+            /*
+             * Jay's current Android TTS profile.
+             *
+             * Lower pitch = deeper voice.
+             * Slightly slower speed = calm delivery.
+             */
+
+            jayVoice.setPitch(jayPitch);
+            jayVoice.setSpeechRate(jaySpeed);
 
             int result =
                     jayVoice.setLanguage(
@@ -452,20 +524,26 @@ public class MainActivity extends Activity
                     result ==
                     TextToSpeech.LANG_NOT_SUPPORTED) {
 
-                Toast.makeText(
-                        this,
-                        "Jay voice language unavailable",
-                        Toast.LENGTH_SHORT
-                ).show();
+                /*
+                 * Fall back to English.
+                 */
+
+                jayVoice.setLanguage(
+                        Locale.US
+                );
             }
         }
     }
 
     private void speak(String text) {
 
-        if (jayVoice == null) {
+        if (jayVoice == null ||
+                !voiceReady) {
             return;
         }
+
+        jayVoice.setPitch(jayPitch);
+        jayVoice.setSpeechRate(jaySpeed);
 
         jayVoice.speak(
                 text,
@@ -475,9 +553,9 @@ public class MainActivity extends Activity
         );
     }
 
-    // ---------------------------------------------------------
+    // =========================================================
     // SETTINGS
-    // ---------------------------------------------------------
+    // =========================================================
 
     private void showSettings() {
 
@@ -520,11 +598,15 @@ public class MainActivity extends Activity
     private void showVoiceSettings() {
 
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Jay Voice")
+                .setTitle("Jay Voice Profile")
                 .setMessage(
-                        "Jay's voice system will be expanded here. " +
-                        "We can later add voice selection, speed, pitch " +
-                        "and your chosen voice profile."
+                        "Male\n" +
+                        "Deep • Calm • Confident\n" +
+                        "Low pitch • Moderate speed\n" +
+                        "Smooth and controlled delivery\n" +
+                        "Intelligent • Warm • Slightly futuristic\n" +
+                        "Natural emotion • Clear pronunciation\n" +
+                        "English + Kiswahili + Sheng"
                 )
                 .setPositiveButton(
                         "OK",
@@ -533,9 +615,9 @@ public class MainActivity extends Activity
                 .show();
     }
 
-    // ---------------------------------------------------------
+    // =========================================================
     // UI HELPERS
-    // ---------------------------------------------------------
+    // =========================================================
 
     private void addConversation(String text) {
 
@@ -555,9 +637,9 @@ public class MainActivity extends Activity
         }
     }
 
-    // ---------------------------------------------------------
+    // =========================================================
     // ACTIVITY LIFECYCLE
-    // ---------------------------------------------------------
+    // =========================================================
 
     @Override
     protected void onDestroy() {
@@ -565,7 +647,6 @@ public class MainActivity extends Activity
         if (speechRecognizer != null) {
 
             speechRecognizer.destroy();
-
             speechRecognizer = null;
         }
 
@@ -573,10 +654,9 @@ public class MainActivity extends Activity
 
             jayVoice.stop();
             jayVoice.shutdown();
-
             jayVoice = null;
         }
 
         super.onDestroy();
     }
-                        }
+                                  }

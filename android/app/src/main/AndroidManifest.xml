@@ -2,21 +2,24 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Microphone for Jay voice commands -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Internet for Jay's online AI brain -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Allows Jay to open other apps -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <application
         android:allowBackup="true"
         android:label="Jay"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
-
-        <activity
-            android:name=".JaySecurityActivity"
-            android:exported="false" />
+        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:supportsRtl="true">
 
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="portrait"
             android:exported="true">
 
             <intent-filter>

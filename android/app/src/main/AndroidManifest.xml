@@ -2,21 +2,25 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Microphone for Jay voice commands -->
+    <!-- Microphone for Jay voice recognition -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Internet for Jay's online AI brain -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Allows Jay to open other apps -->
+    <!-- Allows Jay to query installed apps -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- Required for Jay's foreground background service -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
         android:label="Jay"
-        android:theme="@android:style/Theme.Material.NoActionBar"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
 
+        <!-- Jay main screen -->
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
@@ -26,11 +30,19 @@
 
                 <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category
+                    android:name="android.intent.category.LAUNCHER" />
 
             </intent-filter>
 
         </activity>
+
+        <!-- Keeps Jay's service running after leaving the app -->
+        <service
+            android:name=".JayBackgroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false" />
 
     </application>
 

@@ -59,10 +59,7 @@ public class JayBackgroundService extends Service {
                     );
 
             if (manager != null) {
-
-                manager.createNotificationChannel(
-                        channel
-                );
+                manager.createNotificationChannel(channel);
             }
         }
     }
@@ -76,9 +73,7 @@ public class JayBackgroundService extends Service {
                     this,
                     CHANNEL_ID
             )
-                    .setContentTitle(
-                            "Jay is running"
-                    )
+                    .setContentTitle("Jay is running")
                     .setContentText(
                             "Jay is active in the background"
                     )
@@ -91,9 +86,7 @@ public class JayBackgroundService extends Service {
         } else {
 
             return new Notification.Builder(this)
-                    .setContentTitle(
-                            "Jay is running"
-                    )
+                    .setContentTitle("Jay is running")
                     .setContentText(
                             "Jay is active in the background"
                     )
@@ -103,7 +96,9 @@ public class JayBackgroundService extends Service {
                     .setOngoing(true)
                     .build();
         }
-                @Override
+    }
+
+    @Override
     public void onDestroy() {
 
         super.onDestroy();
@@ -114,4 +109,4 @@ public class JayBackgroundService extends Service {
 
         return null;
     }
-                  }
+}

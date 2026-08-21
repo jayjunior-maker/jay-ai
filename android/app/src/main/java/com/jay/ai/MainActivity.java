@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -32,8 +31,6 @@ public class MainActivity extends Activity
     private TextView conversation;
     private EditText inputBox;
 
-    private JaySecurityManager securityManager;
-
     private final int SPEECH_REQUEST = 1001;
 
     @Override
@@ -47,12 +44,9 @@ public class MainActivity extends Activity
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
 
-        securityManager = new JaySecurityManager(this);
-
         jayVoice = new TextToSpeech(this, this);
 
         setupSpeechRecognizer();
-
         buildJayInterface();
     }
 
@@ -77,10 +71,7 @@ public class MainActivity extends Activity
 
         root.setBackground(background);
 
-        // -----------------------------------------------------
         // TOP BAR
-        // -----------------------------------------------------
-
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
@@ -100,29 +91,22 @@ public class MainActivity extends Activity
 
         topBar.addView(title, titleParams);
 
-        Button securityButton = new Button(this);
-        securityButton.setText("🔐");
-        securityButton.setTextSize(18);
+        Button settingsButton = new Button(this);
+        settingsButton.setText("⚙");
+        settingsButton.setTextSize(18);
 
-        securityButton.setOnClickListener(v ->
-                showSecurityMenu()
+        settingsButton.setOnClickListener(v ->
+                showSettings()
         );
 
-        topBar.addView(securityButton);
+        topBar.addView(settingsButton);
 
         root.addView(topBar);
 
-        // -----------------------------------------------------
         // STATUS
-        // -----------------------------------------------------
-
         jayStatus = new TextView(this);
 
-        jayStatus.setText(
-                "● Jay online\nSecurity: " +
-                securityManager.getSecurityStatus()
-        );
-
+        jayStatus.setText("● Jay online");
         jayStatus.setTextColor(Color.WHITE);
         jayStatus.setTextSize(15);
         jayStatus.setGravity(Gravity.CENTER);
@@ -130,10 +114,7 @@ public class MainActivity extends Activity
 
         root.addView(jayStatus);
 
-        // -----------------------------------------------------
         // JAY CORE
-        // -----------------------------------------------------
-
         TextView jayCore = new TextView(this);
 
         jayCore.setText("J");
@@ -169,16 +150,13 @@ public class MainActivity extends Activity
 
         root.addView(jayCore, coreParams);
 
-        // -----------------------------------------------------
         // CONVERSATION
-        // -----------------------------------------------------
-
         ScrollView scrollView = new ScrollView(this);
 
         conversation = new TextView(this);
 
         conversation.setText(
-                "Jay: Welcome. I am ready.\n\n"
+                "Jay: Good morning, Sir. I am ready.\n\n"
         );
 
         conversation.setTextColor(Color.WHITE);
@@ -196,10 +174,7 @@ public class MainActivity extends Activity
 
         root.addView(scrollView, scrollParams);
 
-        // -----------------------------------------------------
         // INPUT
-        // -----------------------------------------------------
-
         inputBox = new EditText(this);
 
         inputBox.setHint("Talk to Jay...");
@@ -209,10 +184,7 @@ public class MainActivity extends Activity
 
         root.addView(inputBox);
 
-        // -----------------------------------------------------
         // BUTTONS
-        // -----------------------------------------------------
-
         LinearLayout buttons =
                 new LinearLayout(this);
 
@@ -271,14 +243,16 @@ public class MainActivity extends Activity
         root.addView(buttons);
 
         setContentView(root);
-                                               }
-                // ---------------------------------------------------------
+    }
+
+    // ---------------------------------------------------------
     // SPEECH RECOGNITION
     // ---------------------------------------------------------
 
     private void setupSpeechRecognizer() {
 
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+
             Toast.makeText(
                     this,
                     "Speech recognition is not available",
@@ -325,11 +299,7 @@ public class MainActivity extends Activity
                     @Override
                     public void onError(int error) {
 
-                        updateStatus(
-                                "● Jay online\nSecurity: "
-                                        + securityManager
-                                        .getSecurityStatus()
-                        );
+                        updateStatus("● Jay online");
 
                         Toast.makeText(
                                 MainActivity.this,
@@ -358,11 +328,7 @@ public class MainActivity extends Activity
                             processMessage(spokenText);
                         }
 
-                        updateStatus(
-                                "● Jay online\nSecurity: "
-                                        + securityManager
-                                        .getSecurityStatus()
-                        );
+                        updateStatus("● Jay online");
                     }
 
                     @Override
@@ -435,44 +401,22 @@ public class MainActivity extends Activity
                 lower.contains("hey")) {
 
             response =
-                    "Hello Admin. Jay is online and ready.";
+                    "Hello, Sir. Jay is online and ready.";
 
         } else if (lower.contains("who are you")) {
 
             response =
-                    "I am Jay, your personal AI assistant.";
+                    "I am Jay, your personal AI assistant, Sir.";
 
-        } else if (lower.contains("security")) {
-
-            response =
-                    "Jay security is currently "
-                            + securityManager
-                            .getSecurityStatus()
-                            + ".";
-
-        } else if (lower.contains("guest mode")) {
-
-            securityManager.enterGuestMode();
+        } else if (lower.contains("good morning")) {
 
             response =
-                    "Guest mode has been activated.";
+                    "Good morning, Sir. I hope you slept well.";
 
-            updateStatus(
-                    "● Guest Mode\nSecurity: GUEST"
-            );
-
-        } else if (lower.contains("admin mode")) {
-
-            showAdminAuthorization();
-
-            return;
-
-        } else if (lower.contains("lock")) {
-
-            enterRestrictedMode();
+        } else if (lower.contains("good night")) {
 
             response =
-                    "Jay restricted mode activated.";
+                    "Good night, Sir. Sleep well.";
 
         } else {
 
@@ -532,118 +476,61 @@ public class MainActivity extends Activity
     }
 
     // ---------------------------------------------------------
-    // SECURITY MENU
+    // SETTINGS
     // ---------------------------------------------------------
 
-    private void showSecurityMenu() {
+    private void showSettings() {
 
         final String[] options = {
-                "Admin authorization",
-                "Enter Guest Mode",
-                "Exit Guest Mode",
-                "Restricted Mode"
+                "Voice settings",
+                "Jay information",
+                "Close"
         };
 
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Jay Security")
+                .setTitle("Jay Settings")
                 .setItems(
                         options,
                         (dialog, which) -> {
 
                             if (which == 0) {
 
-                                showAdminAuthorization();
+                                showVoiceSettings();
 
                             } else if (which == 1) {
 
-                                securityManager
-                                        .enterGuestMode();
-
-                                updateSecurityDisplay();
-
-                            } else if (which == 2) {
-
-                                showAdminAuthorization();
-
-                            } else if (which == 3) {
-
-                                enterRestrictedMode();
+                                new android.app.AlertDialog.Builder(
+                                        this
+                                )
+                                        .setTitle("About Jay")
+                                        .setMessage(
+                                                "Jay is your personal AI assistant, Sir."
+                                        )
+                                        .setPositiveButton(
+                                                "OK",
+                                                null
+                                        )
+                                        .show();
                             }
                         }
                 )
                 .show();
     }
 
-    // ---------------------------------------------------------
-    // ADMIN AUTHORIZATION
-    // ---------------------------------------------------------
+    private void showVoiceSettings() {
 
-    private void showAdminAuthorization() {
-
-        securityManager.requestAdminAuthorization(
-                new JaySecurityManager.AuthorizationCallback() {
-
-                    @Override
-                    public void onAuthorized() {
-
-                        securityManager
-                                .setGuestMode(false);
-
-                        securityManager
-                                .setAdminAuthorized(true);
-
-                        updateSecurityDisplay();
-
-                        String message =
-                                "Welcome back, Admin.";
-
-                        addConversation(
-                                "Jay: " + message
-                        );
-
-                        speak(message);
-                    }
-
-                    @Override
-                    public void onDenied() {
-
-                        securityManager
-                                .setGuestMode(true);
-
-                        updateSecurityDisplay();
-
-                        String message =
-                                "Authorization denied. Guest mode remains active.";
-
-                        addConversation(
-                                "Jay: " + message
-                        );
-
-                        speak(message);
-                    }
-                }
-        );
-    }
-
-    // ---------------------------------------------------------
-    // RESTRICTED MODE
-    // ---------------------------------------------------------
-
-    private void enterRestrictedMode() {
-
-        securityManager
-                .setAdminAuthorized(false);
-
-        securityManager
-                .setGuestMode(true);
-
-        updateSecurityDisplay();
-
-        Toast.makeText(
-                this,
-                "Jay Restricted Mode",
-                Toast.LENGTH_SHORT
-        ).show();
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Jay Voice")
+                .setMessage(
+                        "Jay's voice system will be expanded here. " +
+                        "We can later add voice selection, speed, pitch " +
+                        "and your chosen voice profile."
+                )
+                .setPositiveButton(
+                        "OK",
+                        null
+                )
+                .show();
     }
 
     // ---------------------------------------------------------
@@ -666,18 +553,6 @@ public class MainActivity extends Activity
         if (jayStatus != null) {
             jayStatus.setText(status);
         }
-    }
-
-    private void updateSecurityDisplay() {
-
-        String status =
-                securityManager
-                        .getSecurityStatus();
-
-        updateStatus(
-                "● Jay online\nSecurity: "
-                        + status
-        );
     }
 
     // ---------------------------------------------------------
@@ -704,4 +579,4 @@ public class MainActivity extends Activity
 
         super.onDestroy();
     }
-                            }
+                        }

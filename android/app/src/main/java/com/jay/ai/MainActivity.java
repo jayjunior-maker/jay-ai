@@ -890,25 +890,21 @@ public class MainActivity extends Activity
     // ACTIVITY LIFECYCLE
     // =========================================================
 
-    @Override
+        @Override
     protected void onDestroy() {
 
         if (speechRecognizer != null) {
-
             speechRecognizer.destroy();
-
             speechRecognizer = null;
         }
 
         if (jayVoice != null) {
-
             jayVoice.stop();
-
             jayVoice.shutdown();
-
             jayVoice = null;
         }
 
         super.onDestroy();
     }
+        }
         }

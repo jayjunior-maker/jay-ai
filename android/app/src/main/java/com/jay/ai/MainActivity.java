@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
@@ -37,8 +36,6 @@ public class MainActivity extends Activity
 
     private boolean voiceReady = false;
 
-    // JAY VOICE PROFILE
-    // Deep • Calm • Confident • Warm • Futuristic
     private final float jayPitch = 0.75f;
     private final float jaySpeed = 0.90f;
 
@@ -59,10 +56,6 @@ public class MainActivity extends Activity
         buildJayInterface();
     }
 
-    // =========================================================
-    // JAY INTERFACE
-    // =========================================================
-
     private void buildJayInterface() {
 
         LinearLayout root = new LinearLayout(this);
@@ -80,7 +73,6 @@ public class MainActivity extends Activity
 
         root.setBackground(background);
 
-        // TOP BAR
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
@@ -103,13 +95,11 @@ public class MainActivity extends Activity
         Button settingsButton = new Button(this);
         settingsButton.setText("⚙");
         settingsButton.setTextSize(18);
-
         settingsButton.setOnClickListener(v -> showSettings());
 
         topBar.addView(settingsButton);
         root.addView(topBar);
 
-        // STATUS
         jayStatus = new TextView(this);
         jayStatus.setText("● Jay online");
         jayStatus.setTextColor(Color.WHITE);
@@ -119,7 +109,6 @@ public class MainActivity extends Activity
 
         root.addView(jayStatus);
 
-        // JAY CORE
         TextView jayCore = new TextView(this);
         jayCore.setText("J");
         jayCore.setTextColor(Color.WHITE);
@@ -142,8 +131,6 @@ public class MainActivity extends Activity
                 Color.rgb(15, 15, 45)
         );
 
-        jayCore.setBackground(coreBackground);
-
         LinearLayout.LayoutParams coreParams =
                 new LinearLayout.LayoutParams(
                         220,
@@ -152,9 +139,10 @@ public class MainActivity extends Activity
 
         coreParams.gravity = Gravity.CENTER;
 
+        jayCore.setBackground(coreBackground);
+
         root.addView(jayCore, coreParams);
 
-        // CONVERSATION
         ScrollView scrollView = new ScrollView(this);
 
         conversation = new TextView(this);
@@ -178,9 +166,7 @@ public class MainActivity extends Activity
 
         root.addView(scrollView, scrollParams);
 
-        // INPUT
         inputBox = new EditText(this);
-
         inputBox.setHint("Talk to Jay...");
         inputBox.setHintTextColor(Color.LTGRAY);
         inputBox.setTextColor(Color.WHITE);
@@ -188,14 +174,12 @@ public class MainActivity extends Activity
 
         root.addView(inputBox);
 
-        // BUTTONS
         LinearLayout buttons = new LinearLayout(this);
         buttons.setOrientation(LinearLayout.HORIZONTAL);
         buttons.setGravity(Gravity.CENTER);
 
         Button talkButton = new Button(this);
         talkButton.setText("🎙 TALK");
-
         talkButton.setOnClickListener(v -> startListening());
 
         Button sendButton = new Button(this);
@@ -204,14 +188,10 @@ public class MainActivity extends Activity
         sendButton.setOnClickListener(v -> {
 
             String message =
-                    inputBox.getText()
-                            .toString()
-                            .trim();
+                    inputBox.getText().toString().trim();
 
             if (!message.isEmpty()) {
-
                 processMessage(message);
-
                 inputBox.setText("");
             }
         });
@@ -223,24 +203,13 @@ public class MainActivity extends Activity
                         1
                 );
 
-        buttons.addView(
-                talkButton,
-                buttonParams
-        );
-
-        buttons.addView(
-                sendButton,
-                buttonParams
-        );
+        buttons.addView(talkButton, buttonParams);
+        buttons.addView(sendButton, buttonParams);
 
         root.addView(buttons);
 
         setContentView(root);
     }
-
-    // =========================================================
-    // SPEECH RECOGNITION
-    // =========================================================
 
     private void setupSpeechRecognizer() {
 
@@ -307,11 +276,7 @@ public class MainActivity extends Activity
                         if (matches != null &&
                                 !matches.isEmpty()) {
 
-                            String spokenText =
-                                    matches.get(0);
-
-                            processMessage(spokenText);
-
+                            processMessage(matches.get(0));
                             inputBox.setText("");
                         }
 
@@ -367,10 +332,6 @@ public class MainActivity extends Activity
         speechRecognizer.startListening(intent);
     }
 
-    // =========================================================
-    // MESSAGE PROCESSING
-    // =========================================================
-
     private void processMessage(String message) {
 
         if (message == null ||
@@ -385,158 +346,96 @@ public class MainActivity extends Activity
         String lower =
                 message.toLowerCase(Locale.ROOT);
 
-        // WHATSAPP
         if (lower.contains("open whatsapp")) {
-
             openWhatsApp();
             return;
         }
 
-        // CAMERA
         if (lower.contains("open camera") ||
                 lower.equals("camera")) {
-
             openCamera();
             return;
         }
 
-        // PHONE
         if (lower.contains("open phone") ||
                 lower.contains("open dialer")) {
-
             openPhone();
             return;
         }
 
-        // MESSAGES
         if (lower.contains("open messages") ||
                 lower.contains("open sms")) {
-
             openMessages();
             return;
         }
 
-        // SETTINGS
         if (lower.contains("open settings")) {
-
             openSettings();
             return;
         }
 
-        // GREETING
+        if (lower.contains("good morning")) {
+            reply("Good morning, Sir. I hope you slept well.");
+            return;
+        }
+
+        if (lower.contains("good night")) {
+            reply("Good night, Sir. Sleep well.");
+            return;
+        }
+
         if (lower.contains("hello") ||
                 lower.equals("hi") ||
                 lower.contains("hey")) {
-
-            String response =
-                    "Hello, Sir. Jay is online and ready.";
-
-            reply(response);
+            reply("Hello, Sir. Jay is online and ready.");
             return;
         }
 
-        // IDENTITY
         if (lower.contains("who are you")) {
-
-            String response =
-                    "I am Jay, your personal AI assistant, Sir.";
-
-            reply(response);
+            reply("I am Jay, your personal AI assistant, Sir.");
             return;
         }
 
-        // GOOD MORNING
-        if (lower.contains("good morning")) {
-
-            String response =
-                    "Good morning, Sir. I hope you slept well.";
-
-            reply(response);
-            return;
-        }
-
-        // GOOD NIGHT
-        if (lower.contains("good night")) {
-
-            String response =
-                    "Good night, Sir. Sleep well.";
-
-            reply(response);
-            return;
-        }
-
-        // HOW ARE YOU
         if (lower.contains("how are you")) {
-
-            String response =
-                    "I'm operating normally, Sir. Ready when you are.";
-
-            reply(response);
+            reply("I'm operating normally, Sir. Ready when you are.");
             return;
         }
 
-        // PLACEHOLDER FOR ONLINE AI
-        String response =
-                "I'm processing that, Sir. My online AI brain will be connected next.";
-
-        reply(response);
-    }
-
-    private void reply(String response) {
+        reply(
+                "I'm processing that, Sir. My online AI brain will be connected next."
+        );
+                }
+                    private void reply(String response) {
 
         addConversation("Jay: " + response);
-
         speak(response);
-                }
-                    // =========================================================
-    // APP COMMANDS
-    // =========================================================
+    }
 
     private void openWhatsApp() {
 
         try {
 
-            Intent whatsappIntent =
+            Intent intent =
                     getPackageManager()
                             .getLaunchIntentForPackage(
                                     "com.whatsapp"
                             );
 
-            if (whatsappIntent != null) {
+            if (intent != null) {
 
-                String response =
-                        "Opening WhatsApp, Sir.";
-
-                addConversation(
-                        "Jay: " + response
-                );
-
-                speak(response);
-
-                startActivity(whatsappIntent);
+                reply("Opening WhatsApp, Sir.");
+                startActivity(intent);
 
             } else {
 
-                String response =
-                        "WhatsApp is not installed on this phone, Sir.";
-
-                addConversation(
-                        "Jay: " + response
+                reply(
+                        "WhatsApp is not installed on this phone, Sir."
                 );
-
-                speak(response);
             }
 
         } catch (Exception e) {
 
-            String response =
-                    "I couldn't open WhatsApp, Sir.";
-
-            addConversation(
-                    "Jay: " + response
-            );
-
-            speak(response);
+            reply("I couldn't open WhatsApp, Sir.");
         }
     }
 
@@ -544,47 +443,27 @@ public class MainActivity extends Activity
 
         try {
 
-            Intent cameraIntent =
+            Intent intent =
                     new Intent(
                             android.provider.MediaStore.ACTION_IMAGE_CAPTURE
                     );
 
-            if (cameraIntent.resolveActivity(
+            if (intent.resolveActivity(
                     getPackageManager()) != null) {
 
-                String response =
-                        "Opening the camera, Sir.";
-
-                addConversation(
-                        "Jay: " + response
-                );
-
-                speak(response);
-
-                startActivity(cameraIntent);
+                reply("Opening the camera, Sir.");
+                startActivity(intent);
 
             } else {
 
-                String response =
-                        "I couldn't find a camera application, Sir.";
-
-                addConversation(
-                        "Jay: " + response
+                reply(
+                        "I couldn't find a camera application, Sir."
                 );
-
-                speak(response);
             }
 
         } catch (Exception e) {
 
-            String response =
-                    "I couldn't open the camera, Sir.";
-
-            addConversation(
-                    "Jay: " + response
-            );
-
-            speak(response);
+            reply("I couldn't open the camera, Sir.");
         }
     }
 
@@ -592,32 +471,17 @@ public class MainActivity extends Activity
 
         try {
 
-            Intent phoneIntent =
-                    new Intent(
-                            Intent.ACTION_DIAL
-                    );
+            Intent intent =
+                    new Intent(Intent.ACTION_DIAL);
 
-            String response =
-                    "Opening the phone, Sir.";
-
-            addConversation(
-                    "Jay: " + response
-            );
-
-            speak(response);
-
-            startActivity(phoneIntent);
+            reply("Opening the phone, Sir.");
+            startActivity(intent);
 
         } catch (Exception e) {
 
-            String response =
-                    "I couldn't open the phone application, Sir.";
-
-            addConversation(
-                    "Jay: " + response
+            reply(
+                    "I couldn't open the phone application, Sir."
             );
-
-            speak(response);
         }
     }
 
@@ -625,51 +489,29 @@ public class MainActivity extends Activity
 
         try {
 
-            Intent smsIntent =
-                    new Intent(
-                            Intent.ACTION_MAIN
-                    );
+            Intent intent =
+                    new Intent(Intent.ACTION_MAIN);
 
-            smsIntent.addCategory(
+            intent.addCategory(
                     Intent.CATEGORY_APP_MESSAGING
             );
 
-            if (smsIntent.resolveActivity(
+            if (intent.resolveActivity(
                     getPackageManager()) != null) {
 
-                String response =
-                        "Opening messages, Sir.";
-
-                addConversation(
-                        "Jay: " + response
-                );
-
-                speak(response);
-
-                startActivity(smsIntent);
+                reply("Opening messages, Sir.");
+                startActivity(intent);
 
             } else {
 
-                String response =
-                        "I couldn't find a messaging application, Sir.";
-
-                addConversation(
-                        "Jay: " + response
+                reply(
+                        "I couldn't find a messaging application, Sir."
                 );
-
-                speak(response);
             }
 
         } catch (Exception e) {
 
-            String response =
-                    "I couldn't open messages, Sir.";
-
-            addConversation(
-                    "Jay: " + response
-            );
-
-            speak(response);
+            reply("I couldn't open messages, Sir.");
         }
     }
 
@@ -677,38 +519,17 @@ public class MainActivity extends Activity
 
         try {
 
-            Intent settingsIntent =
-                    new Intent(
-                            Settings.ACTION_SETTINGS
-                    );
+            Intent intent =
+                    new Intent(Settings.ACTION_SETTINGS);
 
-            String response =
-                    "Opening settings, Sir.";
-
-            addConversation(
-                    "Jay: " + response
-            );
-
-            speak(response);
-
-            startActivity(settingsIntent);
+            reply("Opening settings, Sir.");
+            startActivity(intent);
 
         } catch (Exception e) {
 
-            String response =
-                    "I couldn't open settings, Sir.";
-
-            addConversation(
-                    "Jay: " + response
-            );
-
-            speak(response);
+            reply("I couldn't open settings, Sir.");
         }
     }
-
-    // =========================================================
-    // JAY VOICE
-    // =========================================================
 
     @Override
     public void onInit(int status) {
@@ -717,29 +538,11 @@ public class MainActivity extends Activity
 
             voiceReady = true;
 
-            /*
-             * JAY VOICE PROFILE
-             *
-             * Male
-             * Deep
-             * Calm
-             * Confident
-             * Warm
-             * Slightly futuristic
-             *
-             * Android TTS cannot guarantee an exact
-             * 100–120 Hz voice. Pitch and speed depend
-             * on the installed TTS engine and voice.
-             */
-
             jayVoice.setPitch(jayPitch);
-
             jayVoice.setSpeechRate(jaySpeed);
 
             int result =
-                    jayVoice.setLanguage(
-                            Locale.US
-                    );
+                    jayVoice.setLanguage(Locale.US);
 
             if (result ==
                     TextToSpeech.LANG_MISSING_DATA ||
@@ -769,17 +572,11 @@ public class MainActivity extends Activity
                 !voiceReady ||
                 text == null ||
                 text.trim().isEmpty()) {
-
             return;
         }
 
-        jayVoice.setPitch(
-                jayPitch
-        );
-
-        jayVoice.setSpeechRate(
-                jaySpeed
-        );
+        jayVoice.setPitch(jayPitch);
+        jayVoice.setSpeechRate(jaySpeed);
 
         jayVoice.speak(
                 text,
@@ -788,10 +585,6 @@ public class MainActivity extends Activity
                 "JAY_RESPONSE"
         );
     }
-
-    // =========================================================
-    // SETTINGS
-    // =========================================================
 
     private void showSettings() {
 
@@ -808,11 +601,8 @@ public class MainActivity extends Activity
                         (dialog, which) -> {
 
                             if (which == 0) {
-
                                 showVoiceSettings();
-
                             } else if (which == 1) {
-
                                 showJayInformation();
                             }
                         }
@@ -830,17 +620,10 @@ public class MainActivity extends Activity
                         "Pitch: Low\n\n" +
                         "Delivery: Smooth and controlled\n\n" +
                         "Speed: Moderate\n\n" +
-                        "Tone: Intelligent, warm, slightly futuristic\n\n" +
-                        "Emotion: Natural\n\n" +
-                        "Pauses: Short and deliberate\n\n" +
-                        "Pronunciation: Clear\n\n" +
-                        "Personality: Confident but friendly\n\n" +
+                        "Tone: Intelligent and futuristic\n\n" +
                         "Languages: English + Kiswahili + Sheng"
                 )
-                .setPositiveButton(
-                        "OK",
-                        null
-                )
+                .setPositiveButton("OK", null)
                 .show();
     }
 
@@ -854,16 +637,9 @@ public class MainActivity extends Activity
                         "conversation and online AI capabilities " +
                         "are being developed."
                 )
-                .setPositiveButton(
-                        "OK",
-                        null
-                )
+                .setPositiveButton("OK", null)
                 .show();
     }
-
-    // =========================================================
-    // UI HELPERS
-    // =========================================================
 
     private void addConversation(String text) {
 
@@ -879,18 +655,11 @@ public class MainActivity extends Activity
     private void updateStatus(String status) {
 
         if (jayStatus != null) {
-
-            jayStatus.setText(
-                    status
-            );
+            jayStatus.setText(status);
         }
     }
 
-    // =========================================================
-    // ACTIVITY LIFECYCLE
-    // =========================================================
-
-        @Override
+    @Override
     protected void onDestroy() {
 
         if (speechRecognizer != null) {
@@ -906,5 +675,4 @@ public class MainActivity extends Activity
 
         super.onDestroy();
     }
-        }
-        }
+                }

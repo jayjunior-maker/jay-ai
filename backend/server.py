@@ -1,75 +1,418 @@
-"""
-server.py -- Jay Cloud Backend, PART 1 milestone.
-Exposes /health and POST /api/chat only. Later parts add memory,
-inventory, repairs, web, voice, and admin auth.
-"""
-from __future__ import annotations
-import logging
-import os
 from flask import Flask, request, jsonify
-from ai_provider import get_provider, LocalProvider, AIProviderError
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-logger = logging.getLogger("jay.server")
+import json
+import urllib.parse
+import urllib.request
+import urllib.error
+import re
 
 app = Flask(__name__)
 
-JAY_SYSTEM_PROMPT = (
-    "You are Jay, a helpful personal AI assistant running for a single user "
-    "on their Android phone. Be concise, friendly, and clear."
-)
+# =========================================================
+# JAY ONLINE BACKEND
+# =========================================================
 
-try:
-    _provider = get_provider()
-    logger.info("AI provider initialized: %s", _provider.name)
-except AIProviderError as e:
-    logger.error("Failed to initialize AI provider: %s", e)
-    _provider = None
+APP_NAME = "JAY BACKEND"
+VERSION = "2.0"
 
-_health_provider = LocalProvider()
 
+# =========================================================
+# HEALTH CHECK
+# =========================================================
 
 @app.route("/health", methods=["GET"])
 def health():
-    reply = _health_provider.chat([{"role": "user", "content": "ping"}])
+
     return jsonify({
         "status": "ok",
-        "configured_provider": _provider.name if _provider else None,
-        "test_reply": reply,
-    }), 200
+        "service": APP_NAME,
+        "version": VERSION,
+        "online": True
+    })
 
 
-@app.route("/api/chat", methods=["POST"])
-def api_chat():
-    if _provider is None:
-        return jsonify({
-            "error": "AI provider is not configured. Set AI_API_KEY (and optionally AI_PROVIDER), then restart."
-        }), 500
+# =========================================================
+# SIMPLE WEB REQUEST
+# =========================================================
 
-    body = request.get_json(silent=True)
-    if not body or "message" not in body:
-        return jsonify({"error": "Request body must be JSON with a 'message' field."}), 400
+def fetch_url(url, timeout=15):
 
-    user_message = body.get("message", "")
-    if not isinstance(user_message, str) or not user_message.strip():
-        return jsonify({"error": "'message' must be a non-empty string."}), 400
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent":
+                "JayAI/2.0"
+        }
+    )
 
-    history = body.get("history", [])
-    if not isinstance(history, list):
-        return jsonify({"error": "'history' must be a list if provided."}), 400
+    with urllib.request.urlopen(
+        request,
+        timeout=timeout
+    ) as response:
 
-    messages = history + [{"role": "user", "content": user_message}]
+        return response.read().decode(
+            "utf-8",
+            errors="replace"
+        )
+
+
+# =========================================================
+# WIKIPEDIA SEARCH
+# =========================================================
+
+def wikipedia_search(query):
+
+    encoded_query = urllib.parse.quote(
+        query
+    )
+
+    url = (
+        "https://en.wikipedia.org/w/api.php"
+        "?action=query"
+        "&format=json"
+        "&list=search"
+        "&utf8=1"
+        "&srlimit=3"
+        "&srsearch="
+        + encoded_query
+    )
 
     try:
-        reply_text = _provider.chat(messages, system=JAY_SYSTEM_PROMPT)
-    except AIProviderError as e:
-        logger.error("AI provider error on /api/chat: %s", e)
-        return jsonify({"error": "Jay's AI provider is temporarily unavailable. Please try again."}), 502
 
-    return jsonify({"reply": reply_text, "provider": _provider.name}), 200
+        raw = fetch_url(url)
 
+        data = json.loads(raw)
+
+        results =
+                results = data.get(
+            "query",
+            {}
+        ).get(
+            "search",
+            []
+        )
+
+        if not results:
+            return None
+
+        articles = []
+
+        for item in results:
+
+            title = item.get(
+                "title",
+                ""
+            )
+
+            snippet = item.get(
+                "snippet",
+                ""
+            )
+
+            snippet = re.sub(
+                r"<[^>]+>",
+                "",
+                snippet
+            )
+
+            if title:
+                articles.append({
+                    "title": title,
+                    "snippet": snippet
+                })
+
+        if not articles:
+            return None
+
+        return articles
+
+    except Exception as error:
+
+        print(
+            "Wikipedia search error:",
+            error
+        )
+
+        return None
+
+
+# =========================================================
+# WIKIPEDIA ARTICLE
+# =========================================================
+
+def wikipedia_article(title):
+
+    encoded_title = urllib.parse.quote(
+        title
+    )
+
+    url = (
+        "https://en.wikipedia.org/w/api.php"
+        "?action=query"
+        "&format=json"
+        "&prop=extracts"
+        "&explaintext=1"
+        "&exintro=1"
+        "&redirects=1"
+        "&titles="
+        + encoded_title
+    )
+
+    try:
+
+        raw = fetch_url(url)
+
+        data = json.loads(raw)
+
+        pages = data.get(
+            "query",
+            {}
+        ).get(
+            "pages",
+            {}
+        )
+
+        for page in pages.values():
+
+            extract = page.get(
+                "extract",
+                ""
+            )
+
+            if extract:
+
+                return {
+                    "title": page.get(
+                        "title",
+                        title
+                    ),
+                    "extract": extract
+                }
+
+        return None
+
+    except Exception as error:
+
+        print(
+            "Wikipedia article error:",
+            error
+        )
+
+        return None
+
+
+# =========================================================
+# CLEAN TEXT
+# =========================================================
+
+def clean_text(text):
+
+    if not text:
+        return ""
+
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
+
+    return text.strip()
+
+
+# =========================================================
+# CREATE ONLINE ANSWER
+# =========================================================
+
+def create_online_answer(
+        question,
+        search_results):
+
+    if not search_results:
+        return None
+
+    best = search_results[0]
+
+    article = wikipedia_article(
+        best["title"]
+    )
+
+    if article:
+
+        title = article["title"]
+
+        extract = clean_text(
+            article["extract"]
+        )
+
+        if extract:
+
+            return (
+                "Here is what I found online, Sir.\n\n"
+                + title
+                + "\n\n"
+                + extract
+            )
+
+    lines = []
+
+    for result in search_results:
+
+        title = result.get(
+            "title",
+            ""
+        )
+
+        snippet = clean_text(
+            result.get(
+                "snippet",
+                ""
+            )
+        )
+
+        if title and snippet:
+
+            lines.append(
+                title
+                + ": "
+                + snippet
+            )
+
+    if lines:
+
+        return (
+            "I found these online results, Sir:\n\n"
+            + "\n\n".join(lines)
+        )
+
+    return None
+            # =========================================================
+# ONLINE CHAT
+# =========================================================
+
+@app.route("/api/chat", methods=["POST"])
+def chat():
+
+    try:
+
+        data = request.get_json(
+            silent=True
+        )
+
+        if not data:
+
+            return jsonify({
+                "status": "error",
+                "reply": "No JSON request was received."
+            }), 400
+
+        message = data.get(
+            "message",
+            ""
+        )
+
+        if not isinstance(
+                message,
+                str
+        ):
+
+            return jsonify({
+                "status": "error",
+                "reply": "The message must be text."
+            }), 400
+
+        message = message.strip()
+
+        if not message:
+
+            return jsonify({
+                "status": "error",
+                "reply": "Please provide a message, Sir."
+            }), 400
+
+        print(
+            "Jay online question:",
+            message
+        )
+
+        # -------------------------------------------------
+        # SEARCH THE INTERNET
+        # -------------------------------------------------
+
+        results = wikipedia_search(
+            message
+        )
+
+        answer = create_online_answer(
+            message,
+            results
+        )
+
+        if answer:
+
+            return jsonify({
+                "status": "ok",
+                "online": True,
+                "reply": answer
+            })
+
+        return jsonify({
+            "status": "ok",
+            "online": True,
+            "reply":
+                "I couldn't find reliable information "
+                "for that question online, Sir."
+        })
+
+    except Exception as error:
+
+        print(
+            "CHAT ERROR:",
+            error
+        )
+
+        return jsonify({
+            "status": "error",
+            "online": True,
+            "reply":
+                "Jay's online brain encountered an error: "
+                + str(error)
+        }), 500
+
+
+# =========================================================
+# ROOT
+# =========================================================
+
+@app.route("/", methods=["GET"])
+def home():
+
+    return jsonify({
+        "service": APP_NAME,
+        "version": VERSION,
+        "status": "ok",
+        "message":
+            "Jay online backend is running."
+    })
+
+
+# =========================================================
+# SERVER START
+# =========================================================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    debug = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
-    app.run(host="0.0.0.0", port=port, debug=debug)
+
+    print()
+    print("========================================")
+    print("       JAY ONLINE BACKEND 2.0")
+    print("========================================")
+    print("Health:  /health")
+    print("Chat:    /api/chat")
+    print("Root:    /")
+    print("Port:    5000")
+    print("========================================")
+    print()
+
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False
+        )

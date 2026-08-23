@@ -33,6 +33,7 @@ public class MainActivity extends Activity
 
     private TextToSpeech jayVoice;
     private SpeechRecognizer speechRecognizer;
+
     private JayBrain jayBrain;
     private JayDatabase jayDatabase;
 
@@ -62,11 +63,9 @@ public class MainActivity extends Activity
         jayVoice = new TextToSpeech(this, this);
 
         buildJayInterface();
-
         setupSpeechRecognizer();
     }
-
-    private void buildJayInterface() {
+                    private void buildJayInterface() {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -106,7 +105,10 @@ public class MainActivity extends Activity
         Button settingsButton = new Button(this);
         settingsButton.setText("⚙");
         settingsButton.setTextSize(18);
-        settingsButton.setOnClickListener(v -> showSettings());
+
+        settingsButton.setOnClickListener(
+                v -> showSettings()
+        );
 
         topBar.addView(settingsButton);
         root.addView(topBar);
@@ -123,6 +125,7 @@ public class MainActivity extends Activity
 
         // JAY CORE
         TextView jayCore = new TextView(this);
+
         jayCore.setText("J");
         jayCore.setTextColor(Color.WHITE);
         jayCore.setTextSize(80);
@@ -154,10 +157,14 @@ public class MainActivity extends Activity
 
         jayCore.setBackground(coreBackground);
 
-        root.addView(jayCore, coreParams);
+        root.addView(
+                jayCore,
+                coreParams
+        );
 
         // CONVERSATION
-        ScrollView scrollView = new ScrollView(this);
+        ScrollView scrollView =
+                new ScrollView(this);
 
         conversation = new TextView(this);
 
@@ -167,7 +174,12 @@ public class MainActivity extends Activity
 
         conversation.setTextColor(Color.WHITE);
         conversation.setTextSize(16);
-        conversation.setPadding(20, 20, 20, 20);
+        conversation.setPadding(
+                20,
+                20,
+                20,
+                20
+        );
 
         scrollView.addView(conversation);
 
@@ -178,36 +190,72 @@ public class MainActivity extends Activity
                         1
                 );
 
-        root.addView(scrollView, scrollParams);
+        root.addView(
+                scrollView,
+                scrollParams
+        );
 
         // INPUT
         inputBox = new EditText(this);
-        inputBox.setHint("Talk to Jay...");
-        inputBox.setHintTextColor(Color.LTGRAY);
-        inputBox.setTextColor(Color.WHITE);
+
+        inputBox.setHint(
+                "Talk to Jay..."
+        );
+
+        inputBox.setHintTextColor(
+                Color.LTGRAY
+        );
+
+        inputBox.setTextColor(
+                Color.WHITE
+        );
+
         inputBox.setSingleLine(true);
 
         root.addView(inputBox);
 
         // BUTTONS
-        LinearLayout buttons = new LinearLayout(this);
-        buttons.setOrientation(LinearLayout.HORIZONTAL);
-        buttons.setGravity(Gravity.CENTER);
+        LinearLayout buttons =
+                new LinearLayout(this);
 
-        Button talkButton = new Button(this);
-        talkButton.setText("🎙 TALK");
-        talkButton.setOnClickListener(v -> startListening());
+        buttons.setOrientation(
+                LinearLayout.HORIZONTAL
+        );
 
-        Button sendButton = new Button(this);
-        sendButton.setText("SEND");
+        buttons.setGravity(
+                Gravity.CENTER
+        );
+
+        Button talkButton =
+                new Button(this);
+
+        talkButton.setText(
+                "🎙 TALK"
+        );
+
+        talkButton.setOnClickListener(
+                v -> startListening()
+        );
+
+        Button sendButton =
+                new Button(this);
+
+        sendButton.setText(
+                "SEND"
+        );
 
         sendButton.setOnClickListener(v -> {
 
             String message =
-                    inputBox.getText().toString().trim();
+                    inputBox
+                            .getText()
+                            .toString()
+                            .trim();
 
             if (!message.isEmpty()) {
+
                 processMessage(message);
+
                 inputBox.setText("");
             }
         });
@@ -219,15 +267,21 @@ public class MainActivity extends Activity
                         1
                 );
 
-        buttons.addView(talkButton, buttonParams);
-        buttons.addView(sendButton, buttonParams);
+        buttons.addView(
+                talkButton,
+                buttonParams
+        );
+
+        buttons.addView(
+                sendButton,
+                buttonParams
+        );
 
         root.addView(buttons);
 
         setContentView(root);
-    }
-
-    private void setupSpeechRecognizer() {
+                                }
+                    private void setupSpeechRecognizer() {
 
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
 
@@ -247,43 +301,60 @@ public class MainActivity extends Activity
                 new RecognitionListener() {
 
                     @Override
-                    public void onReadyForSpeech(Bundle params) {
-                        updateStatus("● Listening...");
+                    public void onReadyForSpeech(
+                            Bundle params) {
+
+                        updateStatus(
+                                "● Listening..."
+                        );
                     }
 
                     @Override
                     public void onBeginningOfSpeech() {
-                        updateStatus("● Jay is listening...");
+
+                        updateStatus(
+                                "● Jay is listening..."
+                        );
                     }
 
                     @Override
-                    public void onRmsChanged(float rmsdB) {
+                    public void onRmsChanged(
+                            float rmsdB) {
                     }
 
                     @Override
-                    public void onBufferReceived(byte[] buffer) {
+                    public void onBufferReceived(
+                            byte[] buffer) {
                     }
 
                     @Override
                     public void onEndOfSpeech() {
-                        updateStatus("● Processing...");
+
+                        updateStatus(
+                                "● Processing..."
+                        );
                     }
 
                     @Override
-                    public void onError(int error) {
+                    public void onError(
+                            int error) {
 
-                        updateStatus("● Jay online");
+                        updateStatus(
+                                "● Jay online"
+                        );
 
                         String message;
 
                         if (error ==
-                                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
+                                SpeechRecognizer
+                                        .ERROR_INSUFFICIENT_PERMISSIONS) {
 
                             message =
                                     "Microphone permission is required, Sir.";
 
                         } else if (error ==
-                                SpeechRecognizer.ERROR_NO_MATCH) {
+                                SpeechRecognizer
+                                        .ERROR_NO_MATCH) {
 
                             message =
                                     "I didn't catch that, Sir. Please try again.";
@@ -302,30 +373,40 @@ public class MainActivity extends Activity
                     }
 
                     @Override
-                    public void onResults(Bundle results) {
+                    public void onResults(
+                            Bundle results) {
 
                         ArrayList<String> matches =
                                 results.getStringArrayList(
-                                        SpeechRecognizer.RESULTS_RECOGNITION
+                                        SpeechRecognizer
+                                                .RESULTS_RECOGNITION
                                 );
 
                         if (matches != null &&
                                 !matches.isEmpty()) {
 
-                            String spokenText = matches.get(0);
+                            String spokenText =
+                                    matches.get(0);
 
-                            inputBox.setText(spokenText);
+                            inputBox.setText(
+                                    spokenText
+                            );
 
-                            processMessage(spokenText);
+                            processMessage(
+                                    spokenText
+                            );
 
                             inputBox.setText("");
                         }
 
-                        updateStatus("● Jay online");
+                        updateStatus(
+                                "● Jay online"
+                        );
                     }
 
                     @Override
-                    public void onPartialResults(Bundle partialResults) {
+                    public void onPartialResults(
+                            Bundle partialResults) {
                     }
 
                     @Override
@@ -358,6 +439,7 @@ public class MainActivity extends Activity
             setupSpeechRecognizer();
 
             if (speechRecognizer == null) {
+
                 Toast.makeText(
                         this,
                         "Speech recognition unavailable.",
@@ -370,12 +452,14 @@ public class MainActivity extends Activity
 
         Intent intent =
                 new Intent(
-                        RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+                        RecognizerIntent
+                                .ACTION_RECOGNIZE_SPEECH
                 );
 
         intent.putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                RecognizerIntent
+                        .LANGUAGE_MODEL_FREE_FORM
         );
 
         intent.putExtra(
@@ -419,7 +503,8 @@ public class MainActivity extends Activity
 
             if (grantResults.length > 0 &&
                     grantResults[0] ==
-                            PackageManager.PERMISSION_GRANTED) {
+                            PackageManager
+                                    .PERMISSION_GRANTED) {
 
                 Toast.makeText(
                         this,
@@ -439,6 +524,9 @@ public class MainActivity extends Activity
             }
         }
     }
+                    // =========================================================
+    // JAY MESSAGE PROCESSING
+    // =========================================================
 
     private void processMessage(String message) {
 
@@ -449,7 +537,9 @@ public class MainActivity extends Activity
 
         message = message.trim();
 
-        addConversation("You: " + message);
+        addConversation(
+                "You: " + message
+        );
 
         String response;
 
@@ -480,6 +570,10 @@ public class MainActivity extends Activity
             String userMessage,
             String response) {
 
+        // =========================
+        // LOCAL COMMANDS
+        // =========================
+
         if (response.equals("OPEN_SETTINGS")) {
 
             openSettings();
@@ -500,34 +594,157 @@ public class MainActivity extends Activity
 
         if (response.equals("OPEN_INVENTORY")) {
 
-            reply(
-                    "The inventory module is being prepared, Sir."
+            String reply =
+                    "The inventory module is being prepared, Sir.";
+
+            reply(reply);
+
+            saveConversation(
+                    userMessage,
+                    reply
             );
+
             return;
         }
 
         if (response.equals("OPEN_REPAIRS")) {
 
-            reply(
-                    "The repairs module is being prepared, Sir."
+            String reply =
+                    "The repairs module is being prepared, Sir.";
+
+            reply(reply);
+
+            saveConversation(
+                    userMessage,
+                    reply
             );
+
             return;
         }
 
+        // =========================
+        // ONLINE AI
+        // =========================
+
+        if (response.equals("ONLINE_REQUIRED")) {
+
+            askOnline(userMessage);
+
+            return;
+        }
+
+        // =========================
+        // LOCAL RESPONSE
+        // =========================
+
         reply(response);
 
-        jayDatabase.saveConversation(
+        saveConversation(
                 userMessage,
                 response
         );
     }
 
+    private void askOnline(String userMessage) {
+
+        updateStatus(
+                "● Jay is thinking..."
+        );
+
+        jayBrain.askOnline(
+                userMessage,
+                new JayApiClient.Callback() {
+
+                    @Override
+                    public void onSuccess(
+                            String response) {
+
+                        runOnUiThread(() -> {
+
+                            updateStatus(
+                                    "● Jay online"
+                            );
+
+                            if (response == null ||
+                                    response.trim().isEmpty()) {
+
+                                String fallback =
+                                        "I received an empty response from my online brain, Sir.";
+
+                                reply(fallback);
+
+                                saveConversation(
+                                        userMessage,
+                                        fallback
+                                );
+
+                                return;
+                            }
+
+                            reply(response);
+
+                            saveConversation(
+                                    userMessage,
+                                    response
+                            );
+                        });
+                    }
+
+                    @Override
+                    public void onError(
+                            String error) {
+
+                        runOnUiThread(() -> {
+
+                            updateStatus(
+                                    "● Jay online"
+                            );
+
+                            String fallback =
+                                    "I'm unable to reach my online brain right now, Sir. "
+                                    + "I'm still available in offline mode.";
+
+                            reply(fallback);
+
+                            saveConversation(
+                                    userMessage,
+                                    fallback
+                            );
+                        });
+                    }
+                }
+        );
+    }
+
+    private void saveConversation(
+            String userMessage,
+            String response) {
+
+        try {
+
+            jayDatabase.saveConversation(
+                    userMessage,
+                    response
+            );
+
+        } catch (Exception ignored) {
+
+            // A database problem should not
+            // crash Jay.
+        }
+    }
+
     private void reply(String response) {
 
-        addConversation("Jay: " + response);
+        addConversation(
+                "Jay: " + response
+        );
 
         speak(response);
     }
+                    // =========================================================
+    // ANDROID COMMANDS
+    // =========================================================
 
     private void openSettings() {
 
@@ -542,7 +759,9 @@ public class MainActivity extends Activity
 
         } catch (Exception e) {
 
-            reply("I couldn't open settings, Sir.");
+            reply(
+                    "I couldn't open settings, Sir."
+            );
         }
     }
 
@@ -579,7 +798,9 @@ public class MainActivity extends Activity
             if (intent.resolveActivity(
                     getPackageManager()) != null) {
 
-                reply("Opening the calendar, Sir.");
+                reply(
+                        "Opening the calendar, Sir."
+                );
 
                 startActivity(intent);
 
@@ -598,6 +819,10 @@ public class MainActivity extends Activity
         }
     }
 
+    // =========================================================
+    // TEXT TO SPEECH
+    // =========================================================
+
     @Override
     public void onInit(int status) {
 
@@ -605,16 +830,23 @@ public class MainActivity extends Activity
 
             voiceReady = true;
 
-            jayVoice.setPitch(jayPitch);
-            jayVoice.setSpeechRate(jaySpeed);
+            jayVoice.setPitch(
+                    jayPitch
+            );
+
+            jayVoice.setSpeechRate(
+                    jaySpeed
+            );
 
             int result =
-                    jayVoice.setLanguage(Locale.US);
+                    jayVoice.setLanguage(
+                            Locale.US
+                    );
 
             if (result ==
                     TextToSpeech.LANG_MISSING_DATA ||
                     result ==
-                            TextToSpeech.LANG_NOT_SUPPORTED) {
+                    TextToSpeech.LANG_NOT_SUPPORTED) {
 
                 jayVoice.setLanguage(
                         Locale.getDefault()
@@ -639,11 +871,17 @@ public class MainActivity extends Activity
                 !voiceReady ||
                 text == null ||
                 text.trim().isEmpty()) {
+
             return;
         }
 
-        jayVoice.setPitch(jayPitch);
-        jayVoice.setSpeechRate(jaySpeed);
+        jayVoice.setPitch(
+                jayPitch
+        );
+
+        jayVoice.setSpeechRate(
+                jaySpeed
+        );
 
         jayVoice.speak(
                 text,
@@ -652,6 +890,10 @@ public class MainActivity extends Activity
                 "JAY_RESPONSE"
         );
     }
+
+    // =========================================================
+    // SETTINGS
+    // =========================================================
 
     private void showSettings() {
 
@@ -683,7 +925,9 @@ public class MainActivity extends Activity
     private void showVoiceSettings() {
 
         new AlertDialog.Builder(this)
-                .setTitle("Jay Voice Profile")
+                .setTitle(
+                        "Jay Voice Profile"
+                )
                 .setMessage(
                         "Voice: Male\n\n" +
                         "Character: Deep, calm, confident\n\n" +
@@ -703,13 +947,16 @@ public class MainActivity extends Activity
     private void showJayInformation() {
 
         new AlertDialog.Builder(this)
-                .setTitle("About Jay")
+                .setTitle(
+                        "About Jay"
+                )
                 .setMessage(
                         "Jay is your personal AI assistant, Sir.\n\n" +
-                        "Jay currently has local conversation, " +
+                        "Jay currently supports local conversation, " +
                         "memory, voice recognition, text-to-speech, " +
-                        "and Android command capabilities.\n\n" +
-                        "Online AI capabilities are being developed."
+                        "and Android commands.\n\n" +
+                        "Jay can also connect to an online AI backend " +
+                        "when configured."
                 )
                 .setPositiveButton(
                         "OK",
@@ -718,7 +965,12 @@ public class MainActivity extends Activity
                 .show();
     }
 
-    private void addConversation(String text) {
+    // =========================================================
+    // CONVERSATION UI
+    // =========================================================
+
+    private void addConversation(
+            String text) {
 
         if (conversation == null) {
             return;
@@ -729,12 +981,17 @@ public class MainActivity extends Activity
         );
     }
 
-    private void updateStatus(String status) {
+    private void updateStatus(
+            String status) {
 
         if (jayStatus != null) {
             jayStatus.setText(status);
         }
     }
+
+    // =========================================================
+    // CLEANUP
+    // =========================================================
 
     @Override
     protected void onDestroy() {
@@ -743,6 +1000,7 @@ public class MainActivity extends Activity
 
             speechRecognizer.cancel();
             speechRecognizer.destroy();
+
             speechRecognizer = null;
         }
 
@@ -750,13 +1008,15 @@ public class MainActivity extends Activity
 
             jayVoice.stop();
             jayVoice.shutdown();
+
             jayVoice = null;
         }
 
         if (jayDatabase != null) {
+
             jayDatabase.close();
         }
 
         super.onDestroy();
     }
-                }
+                    }

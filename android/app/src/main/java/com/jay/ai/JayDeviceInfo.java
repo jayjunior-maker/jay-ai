@@ -6,23 +6,20 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
+import android.graphics.Point;
 import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
+import android.net.NetworkInfo;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
 import android.os.SystemClock;
-import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
-import java.util.List;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -34,40 +31,57 @@ public class JayDeviceInfo {
         this.context = context.getApplicationContext();
     }
 
+    // =========================================================
+    // MAIN DEVICE REPORT
+    // =========================================================
+
     public String getDetailedDeviceInfo() {
 
-        StringBuilder report = new StringBuilder();
+        StringBuilder report =
+                new StringBuilder();
 
-        report.append("========== JAY DEVICE REPORT ==========\n\n");
+        report.append(
+                "========== JAY DEVICE REPORT ==========\n\n"
+        );
 
-        appendDeviceInfo(report);
+        appendDeviceIdentity(report);
+
         appendAndroidInfo(report);
-        appendCpuInfo(report);
+
+        appendHardwareInfo(report);
+
         appendMemoryInfo(report);
+
         appendStorageInfo(report);
+
         appendBatteryInfo(report);
-        appendNetworkInfo(report);
-        appendWifiInfo(report);
+
         appendDisplayInfo(report);
-        appendSensorInfo(report);
+
+        appendNetworkInfo(report);
+
         appendSystemInfo(report);
+
         appendJayInfo(report);
 
-        report.append("========== END REPORT ==========\n");
+        report.append(
+                "========================================\n"
+        );
 
         return report.toString();
     }
 
-    private void appendDeviceInfo(StringBuilder report) {
+    // =========================================================
+    // DEVICE IDENTITY
+    // =========================================================
+
+    private void appendDeviceIdentity(
+            StringBuilder report) {
 
         report.append("📱 DEVICE\n");
 
         report.append("Manufacturer: ")
                 .append(safe(Build.MANUFACTURER))
-                .append("\n");
-
-        report.append("Brand: ")
-                .append(safe(Build.BRAND))
                 .append("\n");
 
         report.append("Model: ")
@@ -82,6 +96,10 @@ public class JayDeviceInfo {
                 .append(safe(Build.PRODUCT))
                 .append("\n");
 
+        report.append("Brand: ")
+                .append(safe(Build.BRAND))
+                .append("\n");
+
         report.append("Hardware: ")
                 .append(safe(Build.HARDWARE))
                 .append("\n");
@@ -90,25 +108,44 @@ public class JayDeviceInfo {
                 .append(safe(Build.BOARD))
                 .append("\n");
 
+        report.append("Bootloader: ")
+                .append(safe(Build.BOOTLOADER))
+                .append("\n");
+
         report.append("Fingerprint: ")
                 .append(safe(Build.FINGERPRINT))
                 .append("\n\n");
     }
 
-    private void appendAndroidInfo(StringBuilder report) {
+    // =========================================================
+    // ANDROID INFORMATION
+    // =========================================================
+
+    private void appendAndroidInfo(
+            StringBuilder report) {
 
         report.append("🤖 ANDROID\n");
 
-        report.append("Version: ")
-                .append(safe(Build.VERSION.RELEASE))
+        report.append("Android version: ")
+                .append(
+                        safe(
+                                Build.VERSION.RELEASE
+                        )
+                )
                 .append("\n");
 
-        report.append("SDK: ")
-                .append(Build.VERSION.SDK_INT)
+        report.append("SDK level: ")
+                .append(
+                        Build.VERSION.SDK_INT
+                )
                 .append("\n");
 
-        report.append("Build ID: ")
-                .append(safe(Build.ID))
+        report.append("Codename: ")
+                .append(
+                        safe(
+                                Build.VERSION.CODENAME
+                        )
+                )
                 .append("\n");
 
         if (Build.VERSION.SDK_INT >= 23) {
@@ -116,58 +153,119 @@ public class JayDeviceInfo {
             report.append("Security patch: ")
                     .append(
                             safe(
-                                    Build.VERSION.SECURITY_PATCH
+                                    Build.VERSION
+                                            .SECURITY_PATCH
+                            )
+                    )
+                    .append("\n");
+
+            report.append("Base OS: ")
+                    .append(
+                            safe(
+                                    Build.VERSION.BASE_OS
                             )
                     )
                     .append("\n");
         }
 
-        report.append("\n");
-    }
-
-    private void appendCpuInfo(StringBuilder report) {
-
-        report.append("⚙️ CPU\n");
-
-        report.append("Available processors: ")
+        report.append("Build ID: ")
                 .append(
-                        Runtime.getRuntime()
-                                .availableProcessors()
+                        safe(Build.ID)
                 )
                 .append("\n");
 
-        if (Build.VERSION.SDK_INT >= 21) {
+        report.append("Build display: ")
+                .append(
+                        safe(Build.DISPLAY)
+                )
+                .append("\n\n");
+    }
 
-            report.append("Supported ABIs: ");
+    // =========================================================
+    // HARDWARE / CPU
+    // =========================================================
 
-            String[] abis = Build.SUPPORTED_ABIS;
+    private void appendHardwareInfo(
+            StringBuilder report) {
 
-            for (int i = 0; i < abis.length; i++) {
+        report.append("⚡ HARDWARE\n");
+
+        report.append("CPU ABI: ");
+
+        if (Build.SUPPORTED_ABIS != null &&
+                Build.SUPPORTED_ABIS.length > 0) {
+
+            for (int i = 0;
+                 i < Build.SUPPORTED_ABIS.length;
+                 i++) {
 
                 if (i > 0) {
                     report.append(", ");
                 }
 
-                report.append(abis[i]);
+                report.append(
+                        Build.SUPPORTED_ABIS[i]
+                );
             }
-
-            report.append("\n");
 
         } else {
 
-            report.append("CPU ABI: ")
-                    .append(safe(Build.CPU_ABI))
-                    .append("\n");
-
-            report.append("CPU ABI2: ")
-                    .append(safe(Build.CPU_ABI2))
-                    .append("\n");
+            report.append("Unknown");
         }
 
         report.append("\n");
+
+        report.append("CPU cores: ")
+                .append(
+                        Runtime
+                                .getRuntime()
+                                .availableProcessors()
+                )
+                .append("\n");
+
+        report.append("Supported 32-bit ABI: ");
+
+        if (Build.SUPPORTED_32_BIT_ABIS != null &&
+                Build.SUPPORTED_32_BIT_ABIS.length > 0) {
+
+            report.append(
+                    join(
+                            Build.SUPPORTED_32_BIT_ABIS
+                    )
+            );
+
+        } else {
+
+            report.append("None reported");
+        }
+
+        report.append("\n");
+
+        report.append("Supported 64-bit ABI: ");
+
+        if (Build.SUPPORTED_64_BIT_ABIS != null &&
+                Build.SUPPORTED_64_BIT_ABIS.length > 0) {
+
+            report.append(
+                    join(
+                            Build.SUPPORTED_64_BIT_ABIS
+                    )
+            );
+
+        } else {
+
+            report.append("None reported");
+        }
+
+        report.append("\n\n");
     }
 
-    private void appendMemoryInfo(StringBuilder report) {
+    // =========================================================
+    // MEMORY
+    // =========================================================
+
+    private void appendMemoryInfo(
+            StringBuilder report) {
 
         report.append("🧠 MEMORY\n");
 
@@ -185,11 +283,19 @@ public class JayDeviceInfo {
             manager.getMemoryInfo(memory);
 
             report.append("Total RAM: ")
-                    .append(formatBytes(memory.totalMem))
+                    .append(
+                            formatBytes(
+                                    memory.totalMem
+                            )
+                    )
                     .append("\n");
 
             report.append("Available RAM: ")
-                    .append(formatBytes(memory.availMem))
+                    .append(
+                            formatBytes(
+                                    memory.availMem
+                            )
+                    )
                     .append("\n");
 
             report.append("Low memory: ")
@@ -201,7 +307,11 @@ public class JayDeviceInfo {
                     .append("\n");
 
             report.append("Memory threshold: ")
-                    .append(formatBytes(memory.threshold))
+                    .append(
+                            formatBytes(
+                                    memory.threshold
+                            )
+                    )
                     .append("\n");
 
         } else {
@@ -212,46 +322,67 @@ public class JayDeviceInfo {
         }
 
         report.append("\n");
-    }
+                        }
+        // =========================================================
+    // STORAGE
+    // =========================================================
 
-    private void appendStorageInfo(StringBuilder report) {
+    private void appendStorageInfo(
+            StringBuilder report) {
 
         report.append("💾 STORAGE\n");
 
         try {
 
-            StatFs stat =
+            StatFs statFs =
                     new StatFs(
                             Environment
                                     .getDataDirectory()
                                     .getPath()
                     );
 
-            long blockSize =
-                    stat.getBlockSizeLong();
+            long totalBytes =
+                    statFs.getTotalBytes();
 
-            long total =
-                    stat.getBlockCountLong()
-                            * blockSize;
+            long freeBytes =
+                    statFs.getAvailableBytes();
 
-            long available =
-                    stat.getAvailableBlocksLong()
-                            * blockSize;
-
-            long used =
-                    total - available;
+            long usedBytes =
+                    totalBytes - freeBytes;
 
             report.append("Internal total: ")
-                    .append(formatBytes(total))
+                    .append(
+                            formatBytes(totalBytes)
+                    )
                     .append("\n");
 
             report.append("Internal used: ")
-                    .append(formatBytes(used))
+                    .append(
+                            formatBytes(usedBytes)
+                    )
                     .append("\n");
 
-            report.append("Internal available: ")
-                    .append(formatBytes(available))
+            report.append("Internal free: ")
+                    .append(
+                            formatBytes(freeBytes)
+                    )
                     .append("\n");
+
+            if (totalBytes > 0) {
+
+                double percentage =
+                        ((double) usedBytes /
+                                (double) totalBytes)
+                                * 100.0;
+
+                report.append(
+                        String.format(
+                                Locale.US,
+                                "Internal usage: %.1f%%\n",
+                                percentage
+                        )
+                );
+            }
 
         } catch (Exception e) {
 
@@ -263,7 +394,12 @@ public class JayDeviceInfo {
         report.append("\n");
     }
 
-    private void appendBatteryInfo(StringBuilder report) {
+    // =========================================================
+    // BATTERY
+    // =========================================================
+
+    private void appendBatteryInfo(
+            StringBuilder report) {
 
         report.append("🔋 BATTERY\n");
 
@@ -280,99 +416,118 @@ public class JayDeviceInfo {
                             filter
                     );
 
-            if (battery == null) {
+            if (battery != null) {
 
-                report.append(
-                        "Battery information unavailable.\n\n"
-                );
-
-                return;
-            }
-
-            int level =
-                    battery.getIntExtra(
-                            BatteryManager.EXTRA_LEVEL,
-                            -1
-                    );
-
-            int scale =
-                    battery.getIntExtra(
-                            BatteryManager.EXTRA_SCALE,
-                            -1
-                    );
-
-            if (level >= 0 && scale > 0) {
-
-                int percentage =
-                        Math.round(
-                                level * 100f / scale
+                int level =
+                        battery.getIntExtra(
+                                BatteryManager
+                                        .EXTRA_LEVEL,
+                                -1
                         );
 
-                report.append("Level: ")
-                        .append(percentage)
-                        .append("%\n");
-            }
+                int scale =
+                        battery.getIntExtra(
+                                BatteryManager
+                                        .EXTRA_SCALE,
+                                -1
+                        );
 
-            int status =
-                    battery.getIntExtra(
-                            BatteryManager.EXTRA_STATUS,
-                            -1
-                    );
+                if (level >= 0 &&
+                        scale > 0) {
 
-            report.append("Status: ")
-                    .append(getBatteryStatus(status))
-                    .append("\n");
+                    int percentage =
+                            (level * 100) / scale;
 
-            int plugged =
-                    battery.getIntExtra(
-                            BatteryManager.EXTRA_PLUGGED,
-                            0
-                    );
+                    report.append(
+                            "Battery level: "
+                    )
+                            .append(
+                                    percentage
+                            )
+                            .append("%\n");
+                }
 
-            report.append("Power source: ")
-                    .append(getPowerSource(plugged))
-                    .append("\n");
+                int status =
+                        battery.getIntExtra(
+                                BatteryManager
+                                        .EXTRA_STATUS,
+                                -1
+                        );
 
-            int temperature =
-                    battery.getIntExtra(
-                            BatteryManager.EXTRA_TEMPERATURE,
-                            -1
-                    );
-
-            if (temperature >= 0) {
-
-                report.append("Temperature: ")
+                report.append(
+                        "Charging status: "
+                )
                         .append(
-                                String.format(
-                                        Locale.US,
-                                        "%.1f °C",
-                                        temperature / 10f
+                                getChargingStatus(
+                                        status
                                 )
                         )
                         .append("\n");
+
+                int plugged =
+                        battery.getIntExtra(
+                                BatteryManager
+                                        .EXTRA_PLUGGED,
+                                0
+                        );
+
+                report.append(
+                        "Power source: "
+                )
+                        .append(
+                                getPowerSource(
+                                        plugged
+                                )
+                        )
+                        .append("\n");
+
+                if (Build.VERSION.SDK_INT >= 21) {
+
+                    int temperature =
+                            battery.getIntExtra(
+                                    BatteryManager
+                                            .EXTRA_TEMPERATURE,
+                                    -1
+                            );
+
+                    if (temperature >= 0) {
+
+                        report.append(
+                                "Battery temperature: "
+                        )
+                                .append(
+                                        temperature / 10.0
+                                )
+                                .append(" °C\n");
+                    }
+                }
+
+                if (Build.VERSION.SDK_INT >= 21) {
+
+                    int health =
+                            battery.getIntExtra(
+                                    BatteryManager
+                                            .EXTRA_HEALTH,
+                                    -1
+                            );
+
+                    report.append(
+                            "Battery health: "
+                    )
+                            .append(
+                                    getBatteryHealth(
+                                            health
+                                    )
+                            )
+                            .append("\n");
+                }
+
+            } else {
+
+                report.append(
+                        "Battery information unavailable.\n"
+                );
             }
-
-            int voltage =
-                    battery.getIntExtra(
-                            BatteryManager.EXTRA_VOLTAGE,
-                            -1
-                    );
-
-            if (voltage >= 0) {
-
-                report.append("Voltage: ")
-                        .append(voltage)
-                        .append(" mV\n");
-            }
-
-            String technology =
-                    battery.getStringExtra(
-                            BatteryManager.EXTRA_TECHNOLOGY
-                    );
-
-            report.append("Technology: ")
-                    .append(safe(technology))
-                    .append("\n");
 
         } catch (Exception e) {
 
@@ -384,301 +539,82 @@ public class JayDeviceInfo {
         report.append("\n");
     }
 
-    private String getBatteryStatus(int status) {
-
-        switch (status) {
-
-            case BatteryManager.BATTERY_STATUS_CHARGING:
-                return "Charging";
-
-            case BatteryManager.BATTERY_STATUS_FULL:
-                return "Full";
-
-            case BatteryManager.BATTERY_STATUS_DISCHARGING:
-                return "Discharging";
-
-            case BatteryManager.BATTERY_STATUS_NOT_CHARGING:
-                return "Not charging";
-
-            default:
-                return "Unknown";
-        }
-    }
-
-    private String getPowerSource(int plugged) {
-
-        if ((plugged &
-                BatteryManager.BATTERY_PLUGGED_USB) != 0) {
-
-            return "USB";
-        }
-
-        if ((plugged &
-                BatteryManager.BATTERY_PLUGGED_AC) != 0) {
-
-            return "AC";
-        }
-
-        if (Build.VERSION.SDK_INT >= 17) {
-
-            if ((plugged &
-                    BatteryManager.BATTERY_PLUGGED_WIRELESS) != 0) {
-
-                return "Wireless";
-            }
-        }
-            // =========================================================
-    // NETWORK
-    // =========================================================
-
-    private void appendNetworkInfo(StringBuilder report) {
-
-        report.append("📡 NETWORK\n");
-
-        if (Build.VERSION.SDK_INT < 23) {
-
-            report.append(
-                    "Detailed network information requires Android 6.0+.\n\n"
-            );
-
-            return;
-        }
-
-        try {
-
-            ConnectivityManager manager =
-                    (ConnectivityManager)
-                            context.getSystemService(
-                                    Context.CONNECTIVITY_SERVICE
-                            );
-
-            if (manager == null) {
-
-                report.append(
-                        "Network information unavailable.\n\n"
-                );
-
-                return;
-            }
-
-            Network network =
-                    manager.getActiveNetwork();
-
-            if (network == null) {
-
-                report.append(
-                        "Connected: NO\n\n"
-                );
-
-                return;
-            }
-
-            NetworkCapabilities capabilities =
-                    manager.getNetworkCapabilities(
-                            network
-                    );
-
-            if (capabilities == null) {
-
-                report.append(
-                        "Network capabilities unavailable.\n\n"
-                );
-
-                return;
-            }
-
-            report.append("Connected: YES\n");
-
-            if (capabilities.hasTransport(
-                    NetworkCapabilities.TRANSPORT_WIFI
-            )) {
-
-                report.append(
-                        "Connection: Wi-Fi\n"
-                );
-
-            } else if (capabilities.hasTransport(
-                    NetworkCapabilities.TRANSPORT_CELLULAR
-            )) {
-
-                report.append(
-                        "Connection: Mobile data\n"
-                );
-
-            } else if (capabilities.hasTransport(
-                    NetworkCapabilities.TRANSPORT_ETHERNET
-            )) {
-
-                report.append(
-                        "Connection: Ethernet\n"
-                );
-
-            } else {
-
-                report.append(
-                        "Connection: Other\n"
-                );
-            }
-
-            report.append("Internet capability: ")
-                    .append(
-                            capabilities.hasCapability(
-                                    NetworkCapabilities
-                                            .NET_CAPABILITY_INTERNET
-                            )
-                                    ? "YES"
-                                    : "NO"
-                    )
-                    .append("\n");
-
-            report.append("Validated internet: ")
-                    .append(
-                            capabilities.hasCapability(
-                                    NetworkCapabilities
-                                            .NET_CAPABILITY_VALIDATED
-                            )
-                                    ? "YES"
-                                    : "NO"
-                    )
-                    .append("\n");
-
-        } catch (Exception e) {
-
-            report.append(
-                    "Network information unavailable.\n"
-            );
-        }
-
-        report.append("\n");
-    }
-
-    // =========================================================
-    // WI-FI
-    // =========================================================
-
-    private void appendWifiInfo(StringBuilder report) {
-
-        report.append("📶 WI-FI\n");
-
-        try {
-
-            WifiManager wifiManager =
-                    (WifiManager)
-                            context.getApplicationContext()
-                                    .getSystemService(
-                                            Context.WIFI_SERVICE
-                                    );
-
-            if (wifiManager == null) {
-
-                report.append(
-                        "Wi-Fi information unavailable.\n\n"
-                );
-
-                return;
-            }
-
-            report.append("Wi-Fi enabled: ")
-                    .append(
-                            wifiManager.isWifiEnabled()
-                                    ? "YES"
-                                    : "NO"
-                    )
-                    .append("\n");
-
-            WifiInfo wifiInfo =
-                    wifiManager.getConnectionInfo();
-
-            if (wifiInfo != null) {
-
-                String ssid =
-                        wifiInfo.getSSID();
-
-                if (ssid != null &&
-                        !ssid.equals("<unknown ssid>")) {
-
-                    report.append("SSID: ")
-                            .append(ssid)
-                            .append("\n");
-                }
-
-                int linkSpeed =
-                        wifiInfo.getLinkSpeed();
-
-                if (linkSpeed >= 0) {
-
-                    report.append("Link speed: ")
-                            .append(linkSpeed)
-                            .append(" Mbps\n");
-                }
-            }
-
-        } catch (Exception e) {
-
-            report.append(
-                    "Wi-Fi details unavailable.\n"
-            );
-        }
-
-        report.append("\n");
-    }
-
     // =========================================================
     // DISPLAY
     // =========================================================
 
-    private void appendDisplayInfo(StringBuilder report) {
+    private void appendDisplayInfo(
+            StringBuilder report) {
 
-        report.append("🖥️ DISPLAY\n");
+        report.append("🖥 DISPLAY\n");
 
         try {
 
-            WindowManager manager =
+            WindowManager windowManager =
                     (WindowManager)
                             context.getSystemService(
                                     Context.WINDOW_SERVICE
                             );
 
-            if (manager == null) {
+            if (windowManager != null) {
 
-                report.append(
-                        "Display information unavailable.\n\n"
-                );
+                Display display =
+                        windowManager
+                                .getDefaultDisplay();
 
-                return;
-            }
+                Point size =
+                        new Point();
 
-            Display display =
-                    manager.getDefaultDisplay();
+                display.getRealSize(size);
 
-            DisplayMetrics metrics =
-                    new DisplayMetrics();
-
-            display.getMetrics(metrics);
-
-            report.append("Resolution: ")
-                    .append(metrics.widthPixels)
-                    .append(" × ")
-                    .append(metrics.heightPixels)
-                    .append("\n");
-
-            report.append("Density: ")
-                    .append(metrics.density)
-                    .append("\n");
-
-            report.append("DPI: ")
-                    .append(metrics.densityDpi)
-                    .append("\n");
-
-            report.append("Scaled density: ")
-                    .append(metrics.scaledDensity)
-                    .append("\n");
-
-            if (Build.VERSION.SDK_INT >= 23) {
+                report.append("Resolution: ")
+                        .append(size.x)
+                        .append(" x ")
+                        .append(size.y)
+                        .append("\n");
 
                 report.append("Refresh rate: ")
-                        .append(display.getRefreshRate())
-                        .append(" Hz\n");
+                        .append(
+                                String.format(
+                                        Locale.US,
+                                        "%.1f Hz",
+                                        display.getRefreshRate()
+                                )
+                        )
+                        .append("\n");
+
+                report.append("Density: ")
+                        .append(
+                                context
+                                        .getResources()
+                                        .getDisplayMetrics()
+                                        .density
+                        )
+                        .append("\n");
+
+                report.append("Density DPI: ")
+                        .append(
+                                context
+                                        .getResources()
+                                        .getDisplayMetrics()
+                                        .densityDpi
+                        )
+                        .append("\n");
+
+                report.append("Scaled density: ")
+                        .append(
+                                context
+                                        .getResources()
+                                        .getDisplayMetrics()
+                                        .scaledDensity
+                        )
+                        .append("\n");
+
+            } else {
+
+                report.append(
+                        "Display information unavailable.\n"
+                );
             }
 
         } catch (Exception e) {
@@ -692,110 +628,82 @@ public class JayDeviceInfo {
     }
 
     // =========================================================
-    // SENSORS
+    // NETWORK
     // =========================================================
 
-    private void appendSensorInfo(StringBuilder report) {
+    private void appendNetworkInfo(
+            StringBuilder report) {
 
-        report.append("🧭 SENSORS\n");
+        report.append("🌐 NETWORK\n");
 
         try {
 
-            SensorManager manager =
-                    (SensorManager)
+            ConnectivityManager manager =
+                    (ConnectivityManager)
                             context.getSystemService(
-                                    Context.SENSOR_SERVICE
+                                    Context.CONNECTIVITY_SERVICE
                             );
 
-            if (manager == null) {
+            if (manager != null) {
 
-                report.append(
-                        "Sensor information unavailable.\n\n"
-                );
+                NetworkInfo network =
+                        manager.getActiveNetworkInfo();
 
-                return;
-            }
+                if (network != null &&
+                        network.isConnected()) {
 
-            List<Sensor> sensors =
-                    manager.getSensorList(
-                            Sensor.TYPE_ALL
+                    report.append(
+                            "Internet/network: CONNECTED\n"
                     );
 
-            report.append("Sensor count: ")
-                    .append(sensors.size())
-                    .append("\n");
+                    report.append(
+                            "Network type: "
+                    )
+                            .append(
+                                    network.getTypeName()
+                            )
+                            .append("\n");
 
-            for (Sensor sensor : sensors) {
+                    report.append(
+                            "Connection state: "
+                    )
+                            .append(
+                                    network.getState()
+                            )
+                            .append("\n");
 
-                report.append("• ")
-                        .append(
-                                safe(
-                                        sensor.getName()
-                                )
-                        )
-                        .append("\n");
+                } else {
 
-                report.append("  Type: ")
-                        .append(sensor.getType())
-                        .append("\n");
+                    report.append(
+                            "Internet/network: NOT CONNECTED\n"
+                    );
+                }
 
-                report.append("  Vendor: ")
-                        .append(
-                                safe(
-                                        sensor.getVendor()
-                                )
-                        )
-                        .append("\n");
+            } else {
 
-                report.append("  Power: ")
-                        .append(sensor.getPower())
-                        .append(" mA\n");
-
-                report.append("\n");
+                report.append(
+                        "Network information unavailable.\n"
+                );
             }
 
         } catch (Exception e) {
 
             report.append(
-                    "Sensor information unavailable.\n"
+                    "Network information unavailable.\n"
             );
         }
-                }
-        // =========================================================
+
+        report.append("\n");
+    }
+
+    // =========================================================
     // SYSTEM INFORMATION
     // =========================================================
 
-    private void appendSystemInfo(StringBuilder report) {
+    private void appendSystemInfo(
+            StringBuilder report) {
 
-        report.append("\n⚙️ SYSTEM\n");
-
-        long uptime =
-                SystemClock.elapsedRealtime();
-
-        long totalSeconds =
-                uptime / 1000;
-
-        long days =
-                totalSeconds / 86400;
-
-        long hours =
-                (totalSeconds % 86400) / 3600;
-
-        long minutes =
-                (totalSeconds % 3600) / 60;
-
-        long seconds =
-                totalSeconds % 60;
-
-        report.append("Uptime: ")
-                .append(days)
-                .append("d ")
-                .append(hours)
-                .append("h ")
-                .append(minutes)
-                .append("m ")
-                .append(seconds)
-                .append("s\n");
+        report.append("⚙ SYSTEM\n");
 
         report.append("Locale: ")
                 .append(
@@ -804,79 +712,90 @@ public class JayDeviceInfo {
                 )
                 .append("\n");
 
+        report.append("Language: ")
+                .append(
+                        Locale.getDefault()
+                                .getDisplayLanguage()
+                )
+                .append("\n");
+
+        report.append("Country: ")
+                .append(
+                        Locale.getDefault()
+                                .getDisplayCountry()
+                )
+                .append("\n");
+
         report.append("Timezone: ")
                 .append(
-                        TimeZone.getDefault()
+                        TimeZone
+                                .getDefault()
                                 .getID()
+                )
+                .append("\n");
+
+        long uptime =
+                SystemClock.elapsedRealtime();
+
+        report.append("Device uptime: ")
+                .append(
+                        formatDuration(uptime)
                 )
                 .append("\n");
 
         report.append("Java version: ")
                 .append(
-                        safe(
-                                System.getProperty(
-                                        "java.version"
-                                )
+                        System.getProperty(
+                                "java.version"
                         )
                 )
-                .append("\n\n");
-    }
+                .append("\n");
 
+        report.append("\n");
+        }
+        // =========================================================
+    // JAY APP INFORMATION
     // =========================================================
-    // JAY APPLICATION INFORMATION
-    // =========================================================
 
-    private void appendJayInfo(StringBuilder report) {
+    private void appendJayInfo(
+            StringBuilder report) {
 
-        report.append("🤖 JAY APPLICATION\n");
+        report.append("🤖 JAY\n");
 
         try {
 
-            PackageManager manager =
+            PackageManager packageManager =
                     context.getPackageManager();
 
+            String packageName =
+                    context.getPackageName();
+
+            report.append("Package: ")
+                    .append(packageName)
+                    .append("\n");
+
             PackageInfo packageInfo =
-                    manager.getPackageInfo(
-                            context.getPackageName(),
+                    packageManager.getPackageInfo(
+                            packageName,
                             0
                     );
 
-            report.append("Package: ")
+            report.append("Jay version: ")
                     .append(
-                            context.getPackageName()
+                            packageInfo.versionName
                     )
                     .append("\n");
 
-            report.append("Version: ")
+            report.append("Version code: ")
                     .append(
-                            safe(
-                                    packageInfo.versionName
-                            )
+                            packageInfo.versionCode
                     )
                     .append("\n");
-
-            if (Build.VERSION.SDK_INT >= 28) {
-
-                report.append("Version code: ")
-                        .append(
-                                packageInfo
-                                        .getLongVersionCode()
-                        )
-                        .append("\n");
-
-            } else {
-
-                report.append("Version code: ")
-                        .append(
-                                packageInfo.versionCode
-                        )
-                        .append("\n");
-            }
 
         } catch (Exception e) {
 
             report.append(
-                    "Jay application information unavailable.\n"
+                    "Jay app information unavailable.\n"
             );
         }
 
@@ -884,79 +803,267 @@ public class JayDeviceInfo {
     }
 
     // =========================================================
-    // QUICK BATTERY LEVEL
+    // CHARGING STATUS
     // =========================================================
 
-    public int getBatteryLevel() {
+    private String getChargingStatus(
+            int status) {
 
-        try {
+        switch (status) {
 
-            IntentFilter filter =
-                    new IntentFilter(
-                            Intent.ACTION_BATTERY_CHANGED
-                    );
+            case BatteryManager
+                    .BATTERY_STATUS_CHARGING:
 
-            Intent battery =
-                    context.registerReceiver(
-                            null,
-                            filter
-                    );
+                return "Charging";
 
-            if (battery == null) {
+            case BatteryManager
+                    .BATTERY_STATUS_FULL:
 
-                return -1;
-            }
+                return "Full";
 
-            int level =
-                    battery.getIntExtra(
-                            BatteryManager.EXTRA_LEVEL,
-                            -1
-                    );
+            case BatteryManager
+                    .BATTERY_STATUS_DISCHARGING:
 
-            int scale =
-                    battery.getIntExtra(
-                            BatteryManager.EXTRA_SCALE,
-                            -1
-                    );
+                return "Discharging";
 
-            if (level < 0 ||
-                    scale <= 0) {
+            case BatteryManager
+                    .BATTERY_STATUS_NOT_CHARGING:
 
-                return -1;
-            }
+                return "Not charging";
 
-            return Math.round(
-                    level * 100f / scale
-            );
+            default:
 
-        } catch (Exception e) {
-
-            return -1;
+                return "Unknown";
         }
     }
 
     // =========================================================
-    // QUICK DEVICE SUMMARY
+    // POWER SOURCE
     // =========================================================
 
-    public String getDeviceSummary() {
+    private String getPowerSource(
+            int plugged) {
 
-        return
-                safe(Build.MANUFACTURER) +
-                " " +
-                safe(Build.MODEL) +
-                ", Android " +
-                safe(Build.VERSION.RELEASE) +
-                ", battery " +
-                getBatteryLevel() +
-                "%";
+        switch (plugged) {
+
+            case BatteryManager
+                    .BATTERY_PLUGGED_AC:
+
+                return "AC charger";
+
+            case BatteryManager
+                    .BATTERY_PLUGGED_USB:
+
+                return "USB";
+
+            case BatteryManager
+                    .BATTERY_PLUGGED_WIRELESS:
+
+                return "Wireless charging";
+
+            default:
+
+                return "Battery / unknown";
+        }
+    }
+
+    // =========================================================
+    // BATTERY HEALTH
+    // =========================================================
+
+    private String getBatteryHealth(
+            int health) {
+
+        switch (health) {
+
+            case BatteryManager
+                    .BATTERY_HEALTH_GOOD:
+
+                return "Good";
+
+            case BatteryManager
+                    .BATTERY_HEALTH_OVERHEAT:
+
+                return "Overheating";
+
+            case BatteryManager
+                    .BATTERY_HEALTH_DEAD:
+
+                return "Dead";
+
+            case BatteryManager
+                    .BATTERY_HEALTH_OVER_VOLTAGE:
+
+                return "Over voltage";
+
+            case BatteryManager
+                    .BATTERY_HEALTH_UNSPECIFIED_FAILURE:
+
+                return "Unspecified failure";
+
+            case BatteryManager
+                    .BATTERY_HEALTH_COLD:
+
+                return "Cold";
+
+            default:
+
+                return "Unknown";
+        }
+    }
+
+    // =========================================================
+    // ABI LIST
+    // =========================================================
+
+    private String join(
+            String[] values) {
+
+        if (values == null ||
+                values.length == 0) {
+
+            return "None";
+        }
+
+        StringBuilder result =
+                new StringBuilder();
+
+        for (int i = 0;
+             i < values.length;
+             i++) {
+
+            if (i > 0) {
+
+                result.append(", ");
+            }
+
+            result.append(
+                    safe(values[i])
+            );
+        }
+
+        return result.toString();
+    }
+
+    // =========================================================
+    // FORMAT BYTES
+    // =========================================================
+
+    private String formatBytes(
+            long bytes) {
+
+        if (bytes < 0) {
+
+            return "Unknown";
+        }
+
+        if (bytes < 1024) {
+
+            return bytes + " B";
+        }
+
+        double value =
+                bytes / 1024.0;
+
+        if (value < 1024) {
+
+            return String.format(
+                    Locale.US,
+                    "%.2f KB",
+                    value
+            );
+        }
+
+        value =
+                value / 1024.0;
+
+        if (value < 1024) {
+
+            return String.format(
+                    Locale.US,
+                    "%.2f MB",
+                    value
+            );
+        }
+
+        value =
+                value / 1024.0;
+
+        if (value < 1024) {
+
+            return String.format(
+                    Locale.US,
+                    "%.2f GB",
+                    value
+            );
+        }
+
+        value =
+                value / 1024.0;
+
+        return String.format(
+                Locale.US,
+                "%.2f TB",
+                value
+        );
+    }
+
+    // =========================================================
+    // FORMAT DURATION
+    // =========================================================
+
+    private String formatDuration(
+            long milliseconds) {
+
+        long totalSeconds =
+                milliseconds / 1000;
+
+        long days =
+                totalSeconds / 86400;
+
+        totalSeconds %= 86400;
+
+        long hours =
+                totalSeconds / 3600;
+
+        totalSeconds %= 3600;
+
+        long minutes =
+                totalSeconds / 60;
+
+        long seconds =
+                totalSeconds % 60;
+
+        if (days > 0) {
+
+            return days + "d "
+                    + hours + "h "
+                    + minutes + "m "
+                    + seconds + "s";
+        }
+
+        if (hours > 0) {
+
+            return hours + "h "
+                    + minutes + "m "
+                    + seconds + "s";
+        }
+
+        if (minutes > 0) {
+
+            return minutes + "m "
+                    + seconds + "s";
+        }
+
+        return seconds + "s";
     }
 
     // =========================================================
     // SAFE STRING
     // =========================================================
 
-    private String safe(String value) {
+    private String safe(
+            String value) {
 
         if (value == null ||
                 value.trim().isEmpty()) {
@@ -966,44 +1073,4 @@ public class JayDeviceInfo {
 
         return value;
     }
-
-    // =========================================================
-    // BYTE FORMATTER
-    // =========================================================
-
-    private String formatBytes(long bytes) {
-
-        if (bytes < 0) {
-
-            return "Unknown";
-        }
-
-        double gb =
-                bytes /
-                        (1024.0 *
-                                1024.0 *
-                                1024.0);
-
-        if (gb >= 1.0) {
-
-            return String.format(
-                    Locale.US,
-                    "%.2f GB",
-                    gb
-            );
-        }
-
-        double mb =
-                bytes /
-                        (1024.0 *
-                                1024.0);
-
-        return String.format(
-                Locale.US,
-                "%.0f MB",
-                mb
-        );
-    }
-            }
-        return "Battery";
-            }
+                }

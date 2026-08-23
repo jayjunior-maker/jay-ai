@@ -8,22 +8,33 @@ public class JayBrain {
 
     private final Context context;
     private final JayDatabase database;
+    private final JayApiClient apiClient;
 
     public JayBrain(Context context) {
-        this.context = context.getApplicationContext();
-        this.database = new JayDatabase(this.context);
+
+        this.context = context;
+        this.database = new JayDatabase(context);
+        this.apiClient = new JayApiClient();
     }
 
     public String think(String input) {
 
-        if (input == null || input.trim().isEmpty()) {
-            return "I'm here, Sir. Tell me what you would like me to do.";
+        if (input == null ||
+                input.trim().isEmpty()) {
+
+            return "I'm here. Tell me what you would like me to do, Sir.";
         }
 
-        String text = input.trim().toLowerCase(Locale.ROOT);
+        String text =
+                input.trim()
+                        .toLowerCase(Locale.ROOT);
 
-        // Greetings — English, Kiswahili and Sheng
-        if (containsAny(text,
+        // =========================
+        // GREETINGS
+        // =========================
+
+        if (containsAny(
+                text,
                 "hello",
                 "hi",
                 "hey",
@@ -32,22 +43,30 @@ public class JayBrain {
                 "niaje",
                 "sasa")) {
 
-            return "Hello, Sir. I'm Jay. How can I help you?";
+            return "Hello, Sir. Jay is online and ready.";
         }
 
-        // Identity
-        if (containsAny(text,
+        // =========================
+        // IDENTITY
+        // =========================
+
+        if (containsAny(
+                text,
                 "who are you",
                 "what are you",
                 "wewe ni nani",
                 "jay ni nani",
                 "jay ni nani wewe")) {
 
-            return "I'm Jay, your AI assistant. I can help you with phone controls, memory, business tasks and more.";
+            return "I'm Jay, your personal AI assistant, Sir.";
         }
 
-        // Offline status
-        if (containsAny(text,
+        // =========================
+        // OFFLINE
+        // =========================
+
+        if (containsAny(
+                text,
                 "offline",
                 "no internet",
                 "hakuna internet",
@@ -56,37 +75,56 @@ public class JayBrain {
             return "Yes, Sir. I can work in local mode without an internet connection.";
         }
 
-        // Memory
-        if (containsAny(text,
+        // =========================
+        // MEMORY
+        // =========================
+
+        if (containsAny(
+                text,
                 "remember",
                 "kumbuka",
                 "save this",
                 "hifadhi hii")) {
 
-            database.saveMemory("last_request", input);
+            database.saveMemory(
+                    "last_request",
+                    input
+            );
 
             return "Sure, Sir. I've saved that in my local memory.";
         }
 
-        // Recall
-        if (containsAny(text,
+        // =========================
+        // RECALL
+        // =========================
+
+        if (containsAny(
+                text,
                 "what did i tell you",
                 "what did i ask",
                 "unakumbuka nini",
                 "ulikumbuka nini")) {
 
             String memory =
-                    database.getMemory("last_request");
+                    database.getMemory(
+                            "last_request"
+                    );
 
             if (memory == null) {
+
                 return "I don't have anything saved in that memory yet, Sir.";
             }
 
-            return "I remember you said: " + memory;
+            return "I remember you said: " +
+                    memory;
         }
 
-        // Settings
-        if (containsAny(text,
+        // =========================
+        // SETTINGS
+        // =========================
+
+        if (containsAny(
+                text,
                 "open settings",
                 "fungua settings",
                 "fungua mipangilio",
@@ -96,8 +134,12 @@ public class JayBrain {
             return "OPEN_SETTINGS";
         }
 
-        // Phone
-        if (containsAny(text,
+        // =========================
+        // PHONE
+        // =========================
+
+        if (containsAny(
+                text,
                 "open phone",
                 "open dialer",
                 "fungua simu",
@@ -107,8 +149,12 @@ public class JayBrain {
             return "OPEN_PHONE";
         }
 
-        // Calendar
-        if (containsAny(text,
+        // =========================
+        // CALENDAR
+        // =========================
+
+        if (containsAny(
+                text,
                 "open calendar",
                 "fungua calendar",
                 "fungua kalenda",
@@ -117,8 +163,12 @@ public class JayBrain {
             return "OPEN_CALENDAR";
         }
 
-        // Business / inventory
-        if (containsAny(text,
+        // =========================
+        // INVENTORY
+        // =========================
+
+        if (containsAny(
+                text,
                 "inventory",
                 "stock",
                 "stock iko",
@@ -130,8 +180,12 @@ public class JayBrain {
             return "OPEN_INVENTORY";
         }
 
-        // Repairs
-        if (containsAny(text,
+        // =========================
+        // REPAIRS
+        // =========================
+
+        if (containsAny(
+                text,
                 "repair",
                 "repairs",
                 "repair job",
@@ -143,8 +197,12 @@ public class JayBrain {
             return "OPEN_REPAIRS";
         }
 
-        // Language
-        if (containsAny(text,
+        // =========================
+        // LANGUAGE
+        // =========================
+
+        if (containsAny(
+                text,
                 "kiswahili",
                 "swahili",
                 "sheng")) {
@@ -152,73 +210,9 @@ public class JayBrain {
             return "I understand English, Kiswahili and Sheng, Sir.";
         }
 
-        // Unknown request
+        // =========================
+        // UNKNOWN
+        // =========================
+
         return "ONLINE_REQUIRED";
-    }
-
-    /**
-     * Sends an unknown request to Jay's cloud backend.
-     *
-     * This is asynchronous because network operations
-     * must not block the Android UI thread.
-     */
-    public void askOnline(
-            String input,
-            JayApiClient.Callback callback) {
-
-        if (input == null ||
-                input.trim().isEmpty()) {
-
-            if (callback != null) {
-                callback.onError(
-                        "Empty message."
-                );
             }
-
-            return;
-        }
-
-        if (callback == null) {
-            return;
-        }
-
-        JayApiClient apiClient =
-                new JayApiClient();
-
-        apiClient.chat(
-                input.trim(),
-                new JayApiClient.Callback() {
-
-                    @Override
-                    public void onSuccess(
-                            String reply) {
-
-                        callback.onSuccess(reply);
-                        apiClient.shutdown();
-                    }
-
-                    @Override
-                    public void onError(
-                            String error) {
-
-                        callback.onError(error);
-                        apiClient.shutdown();
-                    }
-                }
-        );
-    }
-
-    private boolean containsAny(
-            String text,
-            String... words) {
-
-        for (String word : words) {
-
-            if (text.contains(word)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-        }

@@ -10,14 +10,14 @@ public class JayBrain {
     private final JayDatabase database;
 
     public JayBrain(Context context) {
-        this.context = context;
-        this.database = new JayDatabase(context);
+        this.context = context.getApplicationContext();
+        this.database = new JayDatabase(this.context);
     }
 
     public String think(String input) {
 
         if (input == null || input.trim().isEmpty()) {
-            return "I'm here. Tell me what you would like me to do.";
+            return "I'm here, Sir. Tell me what you would like me to do.";
         }
 
         String text = input.trim().toLowerCase(Locale.ROOT);
@@ -32,10 +32,10 @@ public class JayBrain {
                 "niaje",
                 "sasa")) {
 
-            return "Hello! I'm Jay. How can I help you?";
+            return "Hello, Sir. I'm Jay. How can I help you?";
         }
 
-        // Identity — English, Kiswahili and Sheng
+        // Identity
         if (containsAny(text,
                 "who are you",
                 "what are you",
@@ -53,7 +53,7 @@ public class JayBrain {
                 "hakuna internet",
                 "bila internet")) {
 
-            return "Yes. I can work in local mode without an internet connection.";
+            return "Yes, Sir. I can work in local mode without an internet connection.";
         }
 
         // Memory
@@ -65,7 +65,7 @@ public class JayBrain {
 
             database.saveMemory("last_request", input);
 
-            return "Sure. I've saved that in my local memory.";
+            return "Sure, Sir. I've saved that in my local memory.";
         }
 
         // Recall
@@ -75,10 +75,11 @@ public class JayBrain {
                 "unakumbuka nini",
                 "ulikumbuka nini")) {
 
-            String memory = database.getMemory("last_request");
+            String memory =
+                    database.getMemory("last_request");
 
             if (memory == null) {
-                return "I don't have anything saved in that memory yet.";
+                return "I don't have anything saved in that memory yet, Sir.";
             }
 
             return "I remember you said: " + memory;
@@ -142,22 +143,77 @@ public class JayBrain {
             return "OPEN_REPAIRS";
         }
 
-        // Language questions
+        // Language
         if (containsAny(text,
                 "kiswahili",
                 "swahili",
                 "sheng")) {
 
-            return "I understand English, Kiswahili and Sheng, but I will always respond in English.";
+            return "I understand English, Kiswahili and Sheng, Sir.";
         }
 
-        // Generic response
-        return "I understand you. I'm currently running in local mode. I can help with commands, memory, phone controls and business functions without internet.";
+        // Unknown request
+        return "ONLINE_REQUIRED";
     }
 
-    private boolean containsAny(String text, String... words) {
+    /**
+     * Sends an unknown request to Jay's cloud backend.
+     *
+     * This is asynchronous because network operations
+     * must not block the Android UI thread.
+     */
+    public void askOnline(
+            String input,
+            JayApiClient.Callback callback) {
+
+        if (input == null ||
+                input.trim().isEmpty()) {
+
+            if (callback != null) {
+                callback.onError(
+                        "Empty message."
+                );
+            }
+
+            return;
+        }
+
+        if (callback == null) {
+            return;
+        }
+
+        JayApiClient apiClient =
+                new JayApiClient();
+
+        apiClient.chat(
+                input.trim(),
+                new JayApiClient.Callback() {
+
+                    @Override
+                    public void onSuccess(
+                            String reply) {
+
+                        callback.onSuccess(reply);
+                        apiClient.shutdown();
+                    }
+
+                    @Override
+                    public void onError(
+                            String error) {
+
+                        callback.onError(error);
+                        apiClient.shutdown();
+                    }
+                }
+        );
+    }
+
+    private boolean containsAny(
+            String text,
+            String... words) {
 
         for (String word : words) {
+
             if (text.contains(word)) {
                 return true;
             }
@@ -165,25 +221,4 @@ public class JayBrain {
 
         return false;
     }
-        }
-public void askOnline(
-        String input,
-        JayApiClient.Callback callback) {
-
-    JayApiClient apiClient = new JayApiClient();
-
-    apiClient.chat(input, new JayApiClient.Callback() {
-
-        @Override
-        public void onSuccess(String reply) {
-            callback.onSuccess(reply);
-            apiClient.shutdown();
-        }
-
-        @Override
-        public void onError(String error) {
-            callback.onError(error);
-            apiClient.shutdown();
-        }
-    });
         }

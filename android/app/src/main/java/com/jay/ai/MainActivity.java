@@ -2,12 +2,12 @@ package com.jay.ai;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.provider.CalendarContract;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -33,6 +33,7 @@ public class MainActivity extends Activity
 
     private TextToSpeech jayVoice;
     private SpeechRecognizer speechRecognizer;
+
     private JayBrain jayBrain;
     private JayDatabase jayDatabase;
 
@@ -101,11 +102,7 @@ public class MainActivity extends Activity
                         }
                 );
 
-        root.setBackground(
-                background
-        );
-
-        // TOP BAR
+        root.setBackground(background);
 
         LinearLayout topBar =
                 new LinearLayout(this);
@@ -154,8 +151,6 @@ public class MainActivity extends Activity
 
         root.addView(topBar);
 
-        // STATUS
-
         jayStatus =
                 new TextView(this);
 
@@ -180,11 +175,7 @@ public class MainActivity extends Activity
                 25
         );
 
-        root.addView(
-                jayStatus
-        );
-
-        // JAY CORE
+        root.addView(jayStatus);
 
         TextView jayCore =
                 new TextView(this);
@@ -235,8 +226,6 @@ public class MainActivity extends Activity
                 coreParams
         );
 
-        // CONVERSATION
-
         ScrollView scrollView =
                 new ScrollView(this);
 
@@ -276,8 +265,6 @@ public class MainActivity extends Activity
                 scrollParams
         );
 
-        // INPUT
-
         inputBox =
                 new EditText(this);
 
@@ -296,8 +283,6 @@ public class MainActivity extends Activity
         inputBox.setSingleLine(true);
 
         root.addView(inputBox);
-
-        // BUTTONS
 
         LinearLayout buttons =
                 new LinearLayout(this);
@@ -367,8 +352,26 @@ public class MainActivity extends Activity
 
         root.addView(buttons);
 
+        Button deviceInfoButton =
+                new Button(this);
+
+        deviceInfoButton.setText(
+                "📱 DEVICE INFO"
+        );
+
+        deviceInfoButton.setOnClickListener(
+                v -> showDeviceInfo()
+        );
+
+        root.addView(
+                deviceInfoButton
+        );
+
         setContentView(root);
-    }
+                                        }
+                    // =========================================================
+    // SPEECH RECOGNIZER
+    // =========================================================
 
     private void setupSpeechRecognizer() {
 
@@ -505,7 +508,15 @@ public class MainActivity extends Activity
                             int eventType,
                             Bundle params) {
                     }
-                    private void startListening() {
+                }
+        );
+    }
+
+    // =========================================================
+    // START LISTENING
+    // =========================================================
+
+    private void startListening() {
 
         if (checkSelfPermission(
                 Manifest.permission.RECORD_AUDIO
@@ -559,17 +570,24 @@ public class MainActivity extends Activity
 
         try {
 
-            speechRecognizer.startListening(intent);
+            speechRecognizer.startListening(
+                    intent
+            );
 
         } catch (Exception e) {
 
             Toast.makeText(
                     this,
-                    "Jay could not start listening.",
+                    "Jay could not start listening: "
+                            + e.getMessage(),
                     Toast.LENGTH_SHORT
             ).show();
         }
     }
+
+    // =========================================================
+    // MICROPHONE PERMISSION
+    // =========================================================
 
     @Override
     public void onRequestPermissionsResult(
@@ -654,7 +672,8 @@ public class MainActivity extends Activity
         // =====================================================
 
         if (response.equals(
-                "ONLINE_REQUIRED")) {
+                "ONLINE_REQUIRED"
+        )) {
 
             updateStatus(
                     "● Connecting to online brain..."
@@ -674,20 +693,21 @@ public class MainActivity extends Activity
                             runOnUiThread(
                                     () -> {
 
-                                updateStatus(
-                                        "● Jay online"
-                                );
+                                        updateStatus(
+                                                "● Jay online"
+                                        );
 
-                                reply(
-                                        onlineResponse
-                                );
-
-                                jayDatabase
-                                        .saveConversation(
-                                                userMessage,
+                                        reply(
                                                 onlineResponse
                                         );
-                            });
+
+                                        jayDatabase
+                                                .saveConversation(
+                                                        userMessage,
+                                                        onlineResponse
+                                                );
+                                    }
+                            );
                         }
 
                         @Override
@@ -697,19 +717,16 @@ public class MainActivity extends Activity
                             runOnUiThread(
                                     () -> {
 
-                                updateStatus(
-                                        "● Online connection failed"
-                                );
+                                        updateStatus(
+                                                "● Online connection failed"
+                                        );
 
-                                // IMPORTANT:
-                                // Show the REAL error.
-                                // Do not hide it.
-
-                                reply(
-                                        "Online connection error, Sir: "
-                                                + error
-                                );
-                            });
+                                        reply(
+                                                "Online connection error, Sir: "
+                                                        + error
+                                        );
+                                    }
+                            );
                         }
                     }
             );
@@ -732,7 +749,8 @@ public class MainActivity extends Activity
             String response) {
 
         if (response.equals(
-                "OPEN_SETTINGS")) {
+                "OPEN_SETTINGS"
+        )) {
 
             openSettings();
 
@@ -740,7 +758,8 @@ public class MainActivity extends Activity
         }
 
         if (response.equals(
-                "OPEN_PHONE")) {
+                "OPEN_PHONE"
+        )) {
 
             openPhone();
 
@@ -748,7 +767,8 @@ public class MainActivity extends Activity
         }
 
         if (response.equals(
-                "OPEN_CALENDAR")) {
+                "OPEN_CALENDAR"
+        )) {
 
             openCalendar();
 
@@ -756,7 +776,8 @@ public class MainActivity extends Activity
         }
 
         if (response.equals(
-                "OPEN_INVENTORY")) {
+                "OPEN_INVENTORY"
+        )) {
 
             reply(
                     "The inventory module is being prepared, Sir."
@@ -766,7 +787,8 @@ public class MainActivity extends Activity
         }
 
         if (response.equals(
-                "OPEN_REPAIRS")) {
+                "OPEN_REPAIRS"
+        )) {
 
             reply(
                     "The repairs module is being prepared, Sir."
@@ -775,9 +797,7 @@ public class MainActivity extends Activity
             return;
         }
 
-        reply(
-                response
-        );
+        reply(response);
 
         jayDatabase.saveConversation(
                 userMessage,
@@ -792,16 +812,19 @@ public class MainActivity extends Activity
     private void reply(
             String response) {
 
+        if (response == null ||
+                response.trim().isEmpty()) {
+
+            return;
+        }
+
         addConversation(
                 "Jay: " + response
         );
 
-        speak(
-                response
-        );
-    }
-
-    // =========================================================
+        speak(response);
+                    }
+                    // =========================================================
     // OPEN SETTINGS
     // =========================================================
 
@@ -814,19 +837,15 @@ public class MainActivity extends Activity
                             Settings.ACTION_SETTINGS
                     );
 
-            reply(
-                    "Opening settings, Sir."
-            );
-
-            startActivity(
-                    intent
-            );
+            startActivity(intent);
 
         } catch (Exception e) {
 
-            reply(
-                    "I couldn't open settings, Sir."
-            );
+            Toast.makeText(
+                    this,
+                    "Unable to open Settings.",
+                    Toast.LENGTH_SHORT
+            ).show();
         }
     }
 
@@ -843,19 +862,15 @@ public class MainActivity extends Activity
                             Intent.ACTION_DIAL
                     );
 
-            reply(
-                    "Opening the phone, Sir."
-            );
-
-            startActivity(
-                    intent
-            );
+            startActivity(intent);
 
         } catch (Exception e) {
 
-            reply(
-                    "I couldn't open the phone application, Sir."
-            );
+            Toast.makeText(
+                    this,
+                    "Unable to open Phone.",
+                    Toast.LENGTH_SHORT
+            ).show();
         }
     }
 
@@ -869,125 +884,74 @@ public class MainActivity extends Activity
 
             Intent intent =
                     new Intent(
-                            Intent.ACTION_MAIN
+                            Intent.ACTION_VIEW
                     );
 
-            intent.addCategory(
-                    Intent.CATEGORY_APP_CALENDAR
+            intent.setData(
+                    CalendarContract.CONTENT_URI
             );
 
-            if (intent.resolveActivity(
-                    getPackageManager()
-            ) != null) {
-
-                reply(
-                        "Opening the calendar, Sir."
-                );
-
-                startActivity(
-                        intent
-                );
-
-            } else {
-
-                reply(
-                        "I couldn't find a calendar application, Sir."
-                );
-            }
+            startActivity(intent);
 
         } catch (Exception e) {
 
-            reply(
-                    "I couldn't open the calendar, Sir."
-            );
-        }
-    }
-                            // =========================================================
-    // TEXT TO SPEECH
-    // =========================================================
-
-    @Override
-    public void onInit(int status) {
-
-        if (status == TextToSpeech.SUCCESS) {
-
-            voiceReady = true;
-
-            jayVoice.setPitch(
-                    jayPitch
-            );
-
-            jayVoice.setSpeechRate(
-                    jaySpeed
-            );
-
-            int result =
-                    jayVoice.setLanguage(
-                            Locale.US
-                    );
-
-            if (result ==
-                    TextToSpeech.LANG_MISSING_DATA ||
-                    result ==
-                            TextToSpeech.LANG_NOT_SUPPORTED) {
-
-                jayVoice.setLanguage(
-                        Locale.getDefault()
-                );
-            }
-
-        } else {
-
-            voiceReady = false;
-
             Toast.makeText(
                     this,
-                    "Jay voice could not start.",
+                    "Unable to open Calendar.",
                     Toast.LENGTH_SHORT
             ).show();
         }
     }
 
-    private void speak(
-            String text) {
+    // =========================================================
+    // DEVICE INFORMATION
+    // =========================================================
 
-        if (jayVoice == null ||
-                !voiceReady ||
-                text == null ||
-                text.trim().isEmpty()) {
+    private void showDeviceInfo() {
 
-            return;
+        try {
+
+            JayDeviceInfo deviceInfo =
+                    new JayDeviceInfo(this);
+
+            String report =
+                    deviceInfo.getDetailedDeviceInfo();
+
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle(
+                            "Jay Device Information"
+                    )
+                    .setMessage(report)
+                    .setPositiveButton(
+                            "OK",
+                            null
+                    )
+                    .show();
+
+        } catch (Exception e) {
+
+            Toast.makeText(
+                    this,
+                    "Unable to read device information: "
+                            + e.getMessage(),
+                    Toast.LENGTH_LONG
+            ).show();
         }
-
-        jayVoice.setPitch(
-                jayPitch
-        );
-
-        jayVoice.setSpeechRate(
-                jaySpeed
-        );
-
-        jayVoice.speak(
-                text,
-                TextToSpeech.QUEUE_FLUSH,
-                null,
-                "JAY_RESPONSE"
-        );
     }
 
     // =========================================================
-    // SETTINGS
+    // SETTINGS MENU
     // =========================================================
 
     private void showSettings() {
 
-        final String[] options = {
-                "Voice settings",
-                "Jay information",
-                "Close"
+        String[] options = {
+                "Android Settings",
+                "Device Information",
+                "Cancel"
         };
 
-        new AlertDialog.Builder(this)
+        new android.app.AlertDialog.Builder(this)
                 .setTitle(
                         "Jay Settings"
                 )
@@ -997,65 +961,13 @@ public class MainActivity extends Activity
 
                             if (which == 0) {
 
-                                showVoiceSettings();
+                                openSettings();
 
                             } else if (which == 1) {
 
-                                showJayInformation();
+                                showDeviceInfo();
                             }
                         }
-                )
-                .show();
-    }
-
-    // =========================================================
-    // VOICE SETTINGS
-    // =========================================================
-
-    private void showVoiceSettings() {
-
-        new AlertDialog.Builder(this)
-                .setTitle(
-                        "Jay Voice Profile"
-                )
-                .setMessage(
-                        "Voice: Male\n\n" +
-                        "Character: Deep, calm, confident\n\n" +
-                        "Pitch: Low\n\n" +
-                        "Delivery: Smooth and controlled\n\n" +
-                        "Speed: Moderate\n\n" +
-                        "Tone: Intelligent and futuristic\n\n" +
-                        "Languages: English + Kiswahili + Sheng"
-                )
-                .setPositiveButton(
-                        "OK",
-                        null
-                )
-                .show();
-    }
-
-    // =========================================================
-    // JAY INFORMATION
-    // =========================================================
-
-    private void showJayInformation() {
-
-        new AlertDialog.Builder(this)
-                .setTitle(
-                        "About Jay"
-                )
-                .setMessage(
-                        "Jay is your personal AI assistant, Sir.\n\n" +
-                        "Jay currently has local conversation, " +
-                        "memory, voice recognition, text-to-speech, " +
-                        "Android command capabilities and an " +
-                        "online AI connection.\n\n" +
-                        "Jay can use the online brain when an " +
-                        "internet connection is available."
-                )
-                .setPositiveButton(
-                        "OK",
-                        null
                 )
                 .show();
     }
@@ -1084,12 +996,67 @@ public class MainActivity extends Activity
     private void updateStatus(
             String status) {
 
-        if (jayStatus != null) {
+        runOnUiThread(
+                () -> {
 
-            jayStatus.setText(
-                    status
+                    if (jayStatus != null) {
+
+                        jayStatus.setText(
+                                status
+                        );
+                    }
+                }
+        );
+    }
+
+    // =========================================================
+    // TEXT TO SPEECH
+    // =========================================================
+
+    @Override
+    public void onInit(
+            int status) {
+
+        if (status ==
+                TextToSpeech.SUCCESS) {
+
+            voiceReady = true;
+
+            jayVoice.setLanguage(
+                    Locale.US
             );
+
+            jayVoice.setPitch(
+                    jayPitch
+            );
+
+            jayVoice.setSpeechRate(
+                    jaySpeed
+            );
+
+        } else {
+
+            voiceReady = false;
         }
+    }
+
+    private void speak(
+            String text) {
+
+        if (!voiceReady ||
+                jayVoice == null ||
+                text == null ||
+                text.trim().isEmpty()) {
+
+            return;
+        }
+
+        jayVoice.speak(
+                text,
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "JAY_RESPONSE"
+        );
     }
 
     // =========================================================
@@ -1101,7 +1068,12 @@ public class MainActivity extends Activity
 
         if (speechRecognizer != null) {
 
-            speechRecognizer.cancel();
+            try {
+
+                speechRecognizer.cancel();
+
+            } catch (Exception ignored) {
+            }
 
             speechRecognizer.destroy();
 
@@ -1110,20 +1082,17 @@ public class MainActivity extends Activity
 
         if (jayVoice != null) {
 
-            jayVoice.stop();
+            try {
 
-            jayVoice.shutdown();
+                jayVoice.stop();
+                jayVoice.shutdown();
+
+            } catch (Exception ignored) {
+            }
 
             jayVoice = null;
         }
 
-        if (jayDatabase != null) {
-
-            jayDatabase.close();
-        }
-
         super.onDestroy();
     }
-            }
-        );
-                        }
+        }

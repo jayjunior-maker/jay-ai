@@ -1,9 +1,5 @@
 package com.jay.ai;
 
-import android.os.Handler;
-import android.os.Looper;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -12,16 +8,30 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 public class JayApiClient {
 
+    /*
+     * =========================================================
+     * JAY ONLINE BACKEND
+     * =========================================================
+     *
+     * IMPORTANT:
+     * Paste your CURRENT Codespace port-5000 URL here.
+     *
+     * Example:
+     *
+     * https://your-codespace-5000.app.github.dev
+     *
+     * Do NOT add:
+     * /health
+     * /api/chat
+     *
+     * The app adds /api/chat automatically.
+     */
     private static final String SERVER_URL =
-            "https://symmetrical-guide-jr546v5qqgv9f5qpg-5000.app.github.dev";
-
-    private static final int TIMEOUT = 15000;
-
-    private final Handler mainHandler =
-            new Handler(Looper.getMainLooper());
+            "PASTE_YOUR_CURRENT_CODESPACE_URL_HERE";
 
     public interface Callback {
 
@@ -34,163 +44,146 @@ public class JayApiClient {
             String message,
             Callback callback) {
 
-        new Thread(new Runnable() {
+        new Thread(() -> {
 
-            @Override
-            public void run() {
+            HttpURLConnection connection = null;
 
-                HttpURLConnection connection = null;
+            try {
 
-                try {
+                if (message == null ||
+                        message.trim().isEmpty()) {
 
-                    URL url = new URL(
-                            SERVER_URL + "/api/chat"
+                    callback.onError(
+                            "Message is empty."
                     );
 
-                    connection =
-                            (HttpURLConnection)
-                                    url.openConnection();
+                    return;
+                }
 
-                    connection.setRequestMethod("POST");
+                String endpoint =
+                        SERVER_URL +
+                        "/api/chat";
 
-                    connection.setConnectTimeout(
-                            TIMEOUT
-                    );
+                URL url =
+                        new URL(endpoint);
 
-                    connection.setReadTimeout(
-                            TIMEOUT
-                    );
+                connection =
+                        (HttpURLConnection)
+                                url.openConnection();
 
-                    connection.setDoInput(true);
-                    connection.setDoOutput(true);
+                connection.setRequestMethod("POST");
 
-                    connection.setRequestProperty(
-                            "Content-Type",
-                            "application/json"
-                    );
+                connection.setConnectTimeout(15000);
 
-                    connection.setRequestProperty(
-                            "Accept",
-                            "application/json"
-                    );
+                connection.setReadTimeout(30000);
 
-                    JSONObject body =
-                            new JSONObject();
+                connection.setDoInput(true);
 
-                    body.put(
-                            "message",
-                            message
-                    );
+                connection.setDoOutput(true);
 
-                    body.put(
-                            "history",
-                            new JSONArray()
-                    );
+                connection.setRequestProperty(
+                        "Content-Type",
+                        "application/json"
+                );
 
-                    String json =
-                            body.toString();
+                connection.setRequestProperty(
+                        "Accept",
+                        "application/json"
+                );
 
-                    OutputStream output =
-                            connection.getOutputStream();
+                JSONObject request =
+                        new JSONObject();
 
-                    output.write(
-                            json.getBytes("UTF-8")
-                    );
+                request.put(
+                        "message",
+                        message
+                );
 
-                    output.flush();
-                    output.close();
+                byte[] data =
+                        request.toString()
+                                .getBytes(
+                                        StandardCharsets.UTF_8
+                                );
 
-                    int responseCode =
-                            connection.getResponseCode();
+                connection.setFixedLengthStreamingMode(
+                        data.length
+                );
 
-                    InputStream inputStream;
+                OutputStream output =
+                        connection.getOutputStream();
 
-                    if (responseCode >= 200 &&
-                            responseCode < 300) {
+                output.write(data);
 
-                        inputStream =
-                                connection.getInputStream();
+                output.flush();
 
-                    } else {
+                output.close();
 
-                        inputStream =
-                                connection.getErrorStream();
-                    }
+                int responseCode =
+                        connection.getResponseCode();
 
-                    String response =
-                            readStream(inputStream);
+                InputStream stream;
 
-                    if (responseCode < 200 ||
-                            responseCode >= 300) {
+                if (responseCode >= 200 &&
+                        responseCode < 300) {
 
-                        throw new Exception(
-                                "Server error HTTP " +
-                                responseCode
-                        );
-                    }
+                    stream =
+                            connection.getInputStream();
 
-                    JSONObject jsonResponse =
-                            new JSONObject(response);
+                } else {
+
+                    stream =
+                            connection.getErrorStream();
+                }
+
+                String responseText =
+                        readStream(stream);
+
+                if (responseCode >= 200 &&
+                        responseCode < 300) {
+
+                    JSONObject response =
+                            new JSONObject(
+                                    responseText
+                            );
 
                     String reply =
-                            jsonResponse.optString(
+                            response.optString(
                                     "reply",
                                     ""
                             );
 
                     if (reply.trim().isEmpty()) {
 
-                        throw new Exception(
-                                "Jay server returned no reply."
+                        callback.onError(
+                                "Jay's server returned an empty response."
                         );
+
+                        return;
                     }
 
-                    mainHandler.post(
-                            new Runnable() {
+                    callback.onSuccess(reply);
 
-                                @Override
-                                public void run() {
+                } else {
 
-                                    callback.onSuccess(
-                                            reply
-                                    );
-                                }
-                            }
+                    callback.onError(
+                            "Server error " +
+                            responseCode +
+                            ": " +
+                            responseText
                     );
+                }
 
-                } catch (Exception e) {
+            } catch (Exception e) {
 
-                    String error =
-                            e.getMessage();
+                callback.onError(
+                        "Unable to reach Jay's online brain: " +
+                        e.getMessage()
+                );
 
-                    if (error == null ||
-                            error.trim().isEmpty()) {
+            } finally {
 
-                        error =
-                                "Could not connect to Jay's server.";
-                    }
-
-                    final String finalError =
-                            error;
-
-                    mainHandler.post(
-                            new Runnable() {
-
-                                @Override
-                                public void run() {
-
-                                    callback.onError(
-                                            finalError
-                                    );
-                                }
-                            }
-                    );
-
-                } finally {
-
-                    if (connection != null) {
-                        connection.disconnect();
-                    }
+                if (connection != null) {
+                    connection.disconnect();
                 }
             }
 
@@ -198,18 +191,17 @@ public class JayApiClient {
     }
 
     private String readStream(
-            InputStream inputStream)
-            throws Exception {
+            InputStream stream) throws Exception {
 
-        if (inputStream == null) {
+        if (stream == null) {
             return "";
         }
 
         BufferedReader reader =
                 new BufferedReader(
                         new InputStreamReader(
-                                inputStream,
-                                "UTF-8"
+                                stream,
+                                StandardCharsets.UTF_8
                         )
                 );
 
@@ -218,8 +210,7 @@ public class JayApiClient {
 
         String line;
 
-        while ((line = reader.readLine())
-                != null) {
+        while ((line = reader.readLine()) != null) {
 
             result.append(line);
         }
@@ -228,4 +219,4 @@ public class JayApiClient {
 
         return result.toString();
     }
-                        }
+                    }

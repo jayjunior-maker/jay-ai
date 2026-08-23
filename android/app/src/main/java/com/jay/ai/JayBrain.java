@@ -166,3 +166,24 @@ public class JayBrain {
         return false;
     }
         }
+public void askOnline(
+        String input,
+        JayApiClient.Callback callback) {
+
+    JayApiClient apiClient = new JayApiClient();
+
+    apiClient.chat(input, new JayApiClient.Callback() {
+
+        @Override
+        public void onSuccess(String reply) {
+            callback.onSuccess(reply);
+            apiClient.shutdown();
+        }
+
+        @Override
+        public void onError(String error) {
+            callback.onError(error);
+            apiClient.shutdown();
+        }
+    });
+        }

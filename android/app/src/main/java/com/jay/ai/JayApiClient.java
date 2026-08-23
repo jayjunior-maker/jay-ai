@@ -12,26 +12,8 @@ import java.nio.charset.StandardCharsets;
 
 public class JayApiClient {
 
-    /*
-     * =========================================================
-     * JAY ONLINE BACKEND
-     * =========================================================
-     *
-     * IMPORTANT:
-     * Paste your CURRENT Codespace port-5000 URL here.
-     *
-     * Example:
-     *
-     * https://your-codespace-5000.app.github.dev
-     *
-     * Do NOT add:
-     * /health
-     * /api/chat
-     *
-     * The app adds /api/chat automatically.
-     */
     private static final String SERVER_URL =
-            "PASTE_YOUR_CURRENT_CODESPACE_URL_HERE";
+            "https://vigilant-bassoon-jr546v5qq4xjf5v7j-5000.app.github.dev";
 
     public interface Callback {
 
@@ -61,8 +43,7 @@ public class JayApiClient {
                 }
 
                 String endpoint =
-                        SERVER_URL +
-                        "/api/chat";
+                        SERVER_URL + "/api/chat";
 
                 URL url =
                         new URL(endpoint);
@@ -73,9 +54,13 @@ public class JayApiClient {
 
                 connection.setRequestMethod("POST");
 
-                connection.setConnectTimeout(15000);
+                connection.setConnectTimeout(
+                        15000
+                );
 
-                connection.setReadTimeout(30000);
+                connection.setReadTimeout(
+                        30000
+                );
 
                 connection.setDoInput(true);
 
@@ -161,7 +146,9 @@ public class JayApiClient {
                         return;
                     }
 
-                    callback.onSuccess(reply);
+                    callback.onSuccess(
+                            reply
+                    );
 
                 } else {
 
@@ -183,6 +170,7 @@ public class JayApiClient {
             } finally {
 
                 if (connection != null) {
+
                     connection.disconnect();
                 }
             }
@@ -194,6 +182,7 @@ public class JayApiClient {
             InputStream stream) throws Exception {
 
         if (stream == null) {
+
             return "";
         }
 
@@ -210,7 +199,8 @@ public class JayApiClient {
 
         String line;
 
-        while ((line = reader.readLine()) != null) {
+        while ((line =
+                reader.readLine()) != null) {
 
             result.append(line);
         }
@@ -219,4 +209,4 @@ public class JayApiClient {
 
         return result.toString();
     }
-                    }
+        }

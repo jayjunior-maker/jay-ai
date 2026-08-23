@@ -216,3 +216,45 @@ public class JayBrain {
 
         return "ONLINE_REQUIRED";
             }
+        // =========================================================
+    // ONLINE AI CONNECTION
+    // =========================================================
+
+    public void askOnline(
+            String message,
+            JayApiClient.Callback callback) {
+
+        if (message == null ||
+                message.trim().isEmpty()) {
+
+            callback.onError(
+                    "Empty message."
+            );
+
+            return;
+        }
+
+        apiClient.chat(
+                message.trim(),
+                callback
+        );
+    }
+
+    // =========================================================
+    // TEXT MATCHING
+    // =========================================================
+
+    private boolean containsAny(
+            String text,
+            String... words) {
+
+        for (String word : words) {
+
+            if (text.contains(word)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

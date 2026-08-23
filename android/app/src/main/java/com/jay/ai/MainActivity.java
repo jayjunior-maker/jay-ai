@@ -49,17 +49,26 @@ public class MainActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        requestWindowFeature(
+                Window.FEATURE_NO_TITLE
+        );
 
         getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
 
-        jayDatabase = new JayDatabase(this);
-        jayBrain = new JayBrain(this);
+        jayDatabase =
+                new JayDatabase(this);
 
-        jayVoice = new TextToSpeech(this, this);
+        jayBrain =
+                new JayBrain(this);
+
+        jayVoice =
+                new TextToSpeech(
+                        this,
+                        this
+                );
 
         buildJayInterface();
 
@@ -68,7 +77,8 @@ public class MainActivity extends Activity
 
     private void buildJayInterface() {
 
-        LinearLayout root = new LinearLayout(this);
+        LinearLayout root =
+                new LinearLayout(this);
 
         root.setOrientation(
                 LinearLayout.VERTICAL
@@ -91,7 +101,9 @@ public class MainActivity extends Activity
                         }
                 );
 
-        root.setBackground(background);
+        root.setBackground(
+                background
+        );
 
         // TOP BAR
 
@@ -168,7 +180,9 @@ public class MainActivity extends Activity
                 25
         );
 
-        root.addView(jayStatus);
+        root.addView(
+                jayStatus
+        );
 
         // JAY CORE
 
@@ -176,9 +190,16 @@ public class MainActivity extends Activity
                 new TextView(this);
 
         jayCore.setText("J");
-        jayCore.setTextColor(Color.WHITE);
+
+        jayCore.setTextColor(
+                Color.WHITE
+        );
+
         jayCore.setTextSize(80);
-        jayCore.setGravity(Gravity.CENTER);
+
+        jayCore.setGravity(
+                Gravity.CENTER
+        );
 
         GradientDrawable coreBackground =
                 new GradientDrawable();
@@ -307,23 +328,25 @@ public class MainActivity extends Activity
                 "SEND"
         );
 
-        sendButton.setOnClickListener(v -> {
+        sendButton.setOnClickListener(
+                v -> {
 
-            String message =
-                    inputBox
-                            .getText()
-                            .toString()
-                            .trim();
+                    String message =
+                            inputBox
+                                    .getText()
+                                    .toString()
+                                    .trim();
 
-            if (!message.isEmpty()) {
+                    if (!message.isEmpty()) {
 
-                processMessage(
-                        message
-                );
+                        processMessage(
+                                message
+                        );
 
-                inputBox.setText("");
-            }
-        });
+                        inputBox.setText("");
+                    }
+                }
+        );
 
         LinearLayout.LayoutParams buttonParams =
                 new LinearLayout.LayoutParams(
@@ -482,9 +505,6 @@ public class MainActivity extends Activity
                             int eventType,
                             Bundle params) {
                     }
-                }
-        );
-                }
                     private void startListening() {
 
         if (checkSelfPermission(
@@ -593,7 +613,8 @@ public class MainActivity extends Activity
     // MESSAGE PROCESSING
     // =========================================================
 
-    private void processMessage(String message) {
+    private void processMessage(
+            String message) {
 
         if (message == null ||
                 message.trim().isEmpty()) {
@@ -601,7 +622,8 @@ public class MainActivity extends Activity
             return;
         }
 
-        message = message.trim();
+        message =
+                message.trim();
 
         addConversation(
                 "You: " + message
@@ -649,7 +671,8 @@ public class MainActivity extends Activity
                         public void onSuccess(
                                 String onlineResponse) {
 
-                            runOnUiThread(() -> {
+                            runOnUiThread(
+                                    () -> {
 
                                 updateStatus(
                                         "● Jay online"
@@ -671,14 +694,20 @@ public class MainActivity extends Activity
                         public void onError(
                                 String error) {
 
-                            runOnUiThread(() -> {
+                            runOnUiThread(
+                                    () -> {
 
                                 updateStatus(
-                                        "● Jay offline"
+                                        "● Online connection failed"
                                 );
 
+                                // IMPORTANT:
+                                // Show the REAL error.
+                                // Do not hide it.
+
                                 reply(
-                                        "I can't reach my online brain right now, Sir. I'm still in offline mode."
+                                        "Online connection error, Sir: "
+                                                + error
                                 );
                             });
                         }
@@ -706,6 +735,7 @@ public class MainActivity extends Activity
                 "OPEN_SETTINGS")) {
 
             openSettings();
+
             return;
         }
 
@@ -713,6 +743,7 @@ public class MainActivity extends Activity
                 "OPEN_PHONE")) {
 
             openPhone();
+
             return;
         }
 
@@ -720,6 +751,7 @@ public class MainActivity extends Activity
                 "OPEN_CALENDAR")) {
 
             openCalendar();
+
             return;
         }
 
@@ -743,7 +775,9 @@ public class MainActivity extends Activity
             return;
         }
 
-        reply(response);
+        reply(
+                response
+        );
 
         jayDatabase.saveConversation(
                 userMessage,
@@ -755,17 +789,20 @@ public class MainActivity extends Activity
     // JAY RESPONSE
     // =========================================================
 
-    private void reply(String response) {
+    private void reply(
+            String response) {
 
         addConversation(
                 "Jay: " + response
         );
 
-        speak(response);
+        speak(
+                response
+        );
     }
 
     // =========================================================
-    // OPEN ANDROID SETTINGS
+    // OPEN SETTINGS
     // =========================================================
 
     private void openSettings() {
@@ -781,7 +818,9 @@ public class MainActivity extends Activity
                     "Opening settings, Sir."
             );
 
-            startActivity(intent);
+            startActivity(
+                    intent
+            );
 
         } catch (Exception e) {
 
@@ -808,7 +847,9 @@ public class MainActivity extends Activity
                     "Opening the phone, Sir."
             );
 
-            startActivity(intent);
+            startActivity(
+                    intent
+            );
 
         } catch (Exception e) {
 
@@ -843,7 +884,9 @@ public class MainActivity extends Activity
                         "Opening the calendar, Sir."
                 );
 
-                startActivity(intent);
+                startActivity(
+                        intent
+                );
 
             } else {
 
@@ -858,8 +901,8 @@ public class MainActivity extends Activity
                     "I couldn't open the calendar, Sir."
             );
         }
-                    }
-                    // =========================================================
+    }
+                            // =========================================================
     // TEXT TO SPEECH
     // =========================================================
 
@@ -870,8 +913,13 @@ public class MainActivity extends Activity
 
             voiceReady = true;
 
-            jayVoice.setPitch(jayPitch);
-            jayVoice.setSpeechRate(jaySpeed);
+            jayVoice.setPitch(
+                    jayPitch
+            );
+
+            jayVoice.setSpeechRate(
+                    jaySpeed
+            );
 
             int result =
                     jayVoice.setLanguage(
@@ -900,7 +948,8 @@ public class MainActivity extends Activity
         }
     }
 
-    private void speak(String text) {
+    private void speak(
+            String text) {
 
         if (jayVoice == null ||
                 !voiceReady ||
@@ -939,7 +988,9 @@ public class MainActivity extends Activity
         };
 
         new AlertDialog.Builder(this)
-                .setTitle("Jay Settings")
+                .setTitle(
+                        "Jay Settings"
+                )
                 .setItems(
                         options,
                         (dialog, which) -> {
@@ -1017,6 +1068,7 @@ public class MainActivity extends Activity
             String text) {
 
         if (conversation == null) {
+
             return;
         }
 
@@ -1072,4 +1124,6 @@ public class MainActivity extends Activity
 
         super.onDestroy();
     }
-                }
+            }
+        );
+                        }

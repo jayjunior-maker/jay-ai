@@ -33,10 +33,6 @@ public class JaySecurityManager {
 
         JaySecurityResult result = actionGuard.evaluate(action);
 
-        /*
-         * If the action needs an Android permission,
-         * make sure that permission has actually been granted.
-         */
         if (result.needsPermission()) {
 
             if (permissionManager.hasRequiredPermission(action)) {
@@ -54,8 +50,7 @@ public class JaySecurityManager {
     }
 
     /**
-     * Executes an action only when the security manager
-     * determines that the action is allowed.
+     * Executes an action only when security allows it.
      */
     public boolean executeIfAllowed(
             JayAction action,
@@ -83,7 +78,50 @@ public class JaySecurityManager {
     }
 
     /**
-     * Requests the Android permission needed for an action.
+     * Starts the 5-second safety guard for a specific action.
+     */
+    public void startFiveSecondGuard(
+            JayAction action,
+            JayFiveSecondGuard.ConfirmationListener listener) {
+
+        if (securityLock.isLocked()) {
+            return;
+        }
+
+        if (action == null) {
+            return;
+        }
+
+        actionGuard.startFiveSecondGuard(
+                action,
+                listener
+        );
+    }
+
+    /**
+     * Cancels the active 5-second guard.
+     */
+    public void cancelFiveSecondGuard() {
+        actionGuard.cancelFiveSecondGuard();
+    }
+
+    /**
+     * Checks whether the 5-second guard is active.
+     */
+    public boolean isFiveSecondGuardActive() {
+        return actionGuard.isFiveSecondGuardActive();
+    }
+
+    /**
+     * Returns the action currently protected by
+     * the 5-second guard.
+     */
+    public JayAction getPendingFiveSecondAction() {
+        return actionGuard.getPendingFiveSecondAction();
+    }
+
+    /**
+     * Requests the Android permission required by an action.
      */
     public boolean requestPermission(
             Activity activity,
@@ -137,33 +175,6 @@ public class JaySecurityManager {
     }
 
     /**
-     * Starts the 5-second safety countdown.
-     */
-    public void startFiveSecondGuard(
-            JayFiveSecondGuard.ConfirmationListener listener) {
-
-        if (securityLock.isLocked()) {
-            return;
-        }
-
-        actionGuard.startFiveSecondGuard(listener);
-    }
-
-    /**
-     * Cancels the active 5-second countdown.
-     */
-    public void cancelFiveSecondGuard() {
-        actionGuard.cancelFiveSecondGuard();
-    }
-
-    /**
-     * Checks whether the 5-second guard is active.
-     */
-    public boolean isFiveSecondGuardActive() {
-        return actionGuard.isFiveSecondGuardActive();
-    }
-
-    /**
      * Locks protected Jay actions.
      */
     public void lock() {
@@ -211,4 +222,4 @@ public class JaySecurityManager {
     public JaySecurityLock getSecurityLock() {
         return securityLock;
     }
-            }
+                }

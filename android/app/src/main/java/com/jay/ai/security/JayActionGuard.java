@@ -11,81 +11,60 @@ public class JayActionGuard {
     }
 
     /**
-     * Checks whether an action is considered dangerous.
+     * Determines whether an action requires the 5-second safety delay.
      */
-    public boolean requiresFiveSecondConfirmation(String action) {
+    public boolean requiresFiveSecondConfirmation(JayAction action) {
 
         if (action == null) {
             return false;
         }
 
-        String normalizedAction = action.toLowerCase().trim();
-
-        return normalizedAction.contains("delete")
-                || normalizedAction.contains("remove")
-                || normalizedAction.contains("erase")
-                || normalizedAction.contains("clear data")
-                || normalizedAction.contains("uninstall")
-                || normalizedAction.contains("factory reset")
-                || normalizedAction.contains("reset device");
+        return action.isDestructive();
     }
 
     /**
-     * Checks whether an action requires explicit user confirmation.
+     * Determines whether an action requires explicit confirmation.
      */
-    public boolean requiresConfirmation(String action) {
+    public boolean requiresConfirmation(JayAction action) {
 
         if (action == null) {
             return false;
         }
 
-        String normalizedAction = action.toLowerCase().trim();
-
-        return normalizedAction.contains("send message")
-                || normalizedAction.contains("send sms")
-                || normalizedAction.contains("make call")
-                || normalizedAction.contains("place call")
-                || normalizedAction.contains("change setting")
-                || normalizedAction.contains("change settings")
-                || requiresFiveSecondConfirmation(normalizedAction);
+        return action.requiresConfirmation();
     }
 
     /**
-     * Checks whether the action is potentially sensitive.
+     * Determines whether an action requires an Android permission.
      */
-    public boolean isSensitiveAction(String action) {
+    public boolean requiresPermission(JayAction action) {
 
         if (action == null) {
             return false;
         }
 
-        String normalizedAction = action.toLowerCase().trim();
-
-        return normalizedAction.contains("camera")
-                || normalizedAction.contains("microphone")
-                || normalizedAction.contains("screen")
-                || normalizedAction.contains("contacts")
-                || normalizedAction.contains("messages")
-                || normalizedAction.contains("sms")
-                || normalizedAction.contains("location")
-                || normalizedAction.contains("files");
+        return action.requiresPermission();
     }
 
     /**
-     * Returns a human-readable security message for Jay.
+     * Returns a security message for Jay.
      */
-    public String getSecurityMessage(String action) {
+    public String getSecurityMessage(JayAction action) {
 
-        if (requiresFiveSecondConfirmation(action)) {
-            return "Sir, this action can delete or permanently change data. "
-                    + "Please wait for the 5-second safety confirmation.";
+        if (action == null) {
+            return "Sir, I could not identify that action.";
         }
 
-        if (requiresConfirmation(action)) {
+        if (action.isDestructive()) {
+            return "Sir, this action can permanently change or delete data. "
+                    + "A 5-second safety confirmation is required.";
+        }
+
+        if (action.requiresConfirmation()) {
             return "Sir, I need your confirmation before performing this action.";
         }
 
-        if (isSensitiveAction(action)) {
+        if (action.requiresPermission()) {
             return "Sir, this action requires the appropriate Android permission.";
         }
 
@@ -98,4 +77,4 @@ public class JayActionGuard {
     public Context getContext() {
         return context;
     }
-    }
+            }

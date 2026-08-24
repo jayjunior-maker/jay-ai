@@ -28,8 +28,11 @@ public class JayFiveSecondGuard {
 
             @Override
             public void onTick(long millisUntilFinished) {
+
                 int secondsRemaining =
-                        (int) Math.ceil(millisUntilFinished / 1000.0);
+                        (int) Math.ceil(
+                                millisUntilFinished / 1000.0
+                        );
 
                 if (listener != null) {
                     listener.onCountdownTick(secondsRemaining);
@@ -38,7 +41,9 @@ public class JayFiveSecondGuard {
 
             @Override
             public void onFinish() {
+
                 waitingForConfirmation = false;
+                countDownTimer = null;
 
                 if (listener != null) {
                     listener.onConfirmed();
@@ -67,4 +72,4 @@ public class JayFiveSecondGuard {
     public boolean isWaitingForConfirmation() {
         return waitingForConfirmation;
     }
-}
+    }

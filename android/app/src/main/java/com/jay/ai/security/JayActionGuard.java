@@ -103,12 +103,24 @@ public class JayActionGuard {
     }
 
     /**
-     * Starts the 5-second safety countdown.
+     * Starts the 5-second safety countdown for a specific action.
      */
     public void startFiveSecondGuard(
+            JayAction action,
             JayFiveSecondGuard.ConfirmationListener listener) {
 
-        fiveSecondGuard.startConfirmation(listener);
+        if (action == null) {
+            return;
+        }
+
+        if (!actionPolicy.isDestructive(action.getType())) {
+            return;
+        }
+
+        fiveSecondGuard.startConfirmation(
+                action,
+                listener
+        );
     }
 
     /**
@@ -123,6 +135,13 @@ public class JayActionGuard {
      */
     public boolean isFiveSecondGuardActive() {
         return fiveSecondGuard.isWaitingForConfirmation();
+    }
+
+    /**
+     * Returns the action currently waiting for confirmation.
+     */
+    public JayAction getPendingFiveSecondAction() {
+        return fiveSecondGuard.getPendingAction();
     }
 
     public boolean requiresFiveSecondConfirmation(JayAction action) {
@@ -185,24 +204,15 @@ public class JayActionGuard {
         return "Action approved.";
     }
 
-    /**
-     * Returns the security audit logger.
-     */
     public JaySecurityAuditLogger getAuditLogger() {
         return auditLogger;
     }
 
-    /**
-     * Returns the action policy.
-     */
     public JayActionPolicy getActionPolicy() {
         return actionPolicy;
     }
 
-    /**
-     * Returns the application context.
-     */
     public Context getContext() {
         return context;
     }
-                }
+    }

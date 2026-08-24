@@ -5,9 +5,11 @@ import android.content.Context;
 public class JayActionGuard {
 
     private final Context context;
+    private final JayFiveSecondGuard fiveSecondGuard;
 
     public JayActionGuard(Context context) {
         this.context = context.getApplicationContext();
+        this.fiveSecondGuard = new JayFiveSecondGuard();
     }
 
     /**
@@ -22,10 +24,6 @@ public class JayActionGuard {
             );
         }
 
-        /*
-         * Destructive actions always receive the highest
-         * protection level and require the 5-second delay.
-         */
         if (action.isDestructive()) {
             return new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_FIVE_SECOND_DELAY,
@@ -34,10 +32,6 @@ public class JayActionGuard {
             );
         }
 
-        /*
-         * Actions involving Android permissions must have
-         * the required permission before Jay can continue.
-         */
         if (action.requiresPermission()) {
             return new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_PERMISSION,
@@ -45,10 +39,6 @@ public class JayActionGuard {
             );
         }
 
-        /*
-         * Important actions such as calls, messages, and
-         * settings changes require explicit confirmation.
-         */
         if (action.requiresConfirmation()) {
             return new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_CONFIRMATION,
@@ -60,6 +50,29 @@ public class JayActionGuard {
                 JaySecurityResult.Status.ALLOWED,
                 "Action approved."
         );
+    }
+
+    /**
+     * Starts the 5-second safety countdown for a destructive action.
+     */
+    public void startFiveSecondGuard(
+            JayFiveSecondGuard.ConfirmationListener listener) {
+
+        fiveSecondGuard.startConfirmation(listener);
+    }
+
+    /**
+     * Cancels the active 5-second countdown.
+     */
+    public void cancelFiveSecondGuard() {
+        fiveSecondGuard.cancel();
+    }
+
+    /**
+     * Checks whether the 5-second countdown is currently active.
+     */
+    public boolean isFiveSecondGuardActive() {
+        return fiveSecondGuard.isWaitingForConfirmation();
     }
 
     /**
@@ -129,4 +142,4 @@ public class JayActionGuard {
     public Context getContext() {
         return context;
     }
-            }
+    }

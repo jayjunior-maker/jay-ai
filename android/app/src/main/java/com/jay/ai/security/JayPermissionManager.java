@@ -23,9 +23,6 @@ public class JayPermissionManager {
         this.context = context.getApplicationContext();
     }
 
-    /**
-     * Checks whether a specific Android permission is granted.
-     */
     public boolean hasPermission(String permission) {
         return ContextCompat.checkSelfPermission(
                 context,
@@ -33,52 +30,82 @@ public class JayPermissionManager {
         ) == PackageManager.PERMISSION_GRANTED;
     }
 
-    /**
-     * Checks camera permission.
-     */
     public boolean hasCameraPermission() {
         return hasPermission(Manifest.permission.CAMERA);
     }
 
-    /**
-     * Checks microphone permission.
-     */
     public boolean hasMicrophonePermission() {
         return hasPermission(Manifest.permission.RECORD_AUDIO);
     }
 
-    /**
-     * Checks location permission.
-     */
     public boolean hasLocationPermission() {
         return hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 || hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
     }
 
-    /**
-     * Checks contacts permission.
-     */
     public boolean hasContactsPermission() {
         return hasPermission(Manifest.permission.READ_CONTACTS);
     }
 
-    /**
-     * Checks phone permission.
-     */
     public boolean hasPhonePermission() {
         return hasPermission(Manifest.permission.READ_PHONE_STATE);
     }
 
-    /**
-     * Checks SMS permission.
-     */
     public boolean hasSmsPermission() {
         return hasPermission(Manifest.permission.READ_SMS);
     }
 
     /**
-     * Requests camera permission.
+     * Returns the Android permission required for a Jay action.
      */
+    public String getRequiredPermission(JayAction action) {
+
+        if (action == null || action.getType() == null) {
+            return null;
+        }
+
+        switch (action.getType()) {
+
+            case CAMERA:
+                return Manifest.permission.CAMERA;
+
+            case MICROPHONE:
+                return Manifest.permission.RECORD_AUDIO;
+
+            case LOCATION:
+                return Manifest.permission.ACCESS_FINE_LOCATION;
+
+            case READ_CONTACTS:
+                return Manifest.permission.READ_CONTACTS;
+
+            case READ_MESSAGES:
+                return Manifest.permission.READ_SMS;
+
+            case SEND_MESSAGE:
+                return Manifest.permission.SEND_SMS;
+
+            case MAKE_CALL:
+                return Manifest.permission.CALL_PHONE;
+
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Checks whether the permission required by an action is granted.
+     */
+    public boolean hasRequiredPermission(JayAction action) {
+
+        String permission = getRequiredPermission(action);
+
+        if (permission == null) {
+            return true;
+        }
+
+        return hasPermission(permission);
+    }
+
     public void requestCameraPermission(Activity activity) {
         ActivityCompat.requestPermissions(
                 activity,
@@ -87,9 +114,6 @@ public class JayPermissionManager {
         );
     }
 
-    /**
-     * Requests microphone permission.
-     */
     public void requestMicrophonePermission(Activity activity) {
         ActivityCompat.requestPermissions(
                 activity,
@@ -98,9 +122,6 @@ public class JayPermissionManager {
         );
     }
 
-    /**
-     * Requests location permissions.
-     */
     public void requestLocationPermission(Activity activity) {
         ActivityCompat.requestPermissions(
                 activity,
@@ -112,9 +133,6 @@ public class JayPermissionManager {
         );
     }
 
-    /**
-     * Requests contacts permission.
-     */
     public void requestContactsPermission(Activity activity) {
         ActivityCompat.requestPermissions(
                 activity,
@@ -123,9 +141,6 @@ public class JayPermissionManager {
         );
     }
 
-    /**
-     * Requests phone permission.
-     */
     public void requestPhonePermission(Activity activity) {
         ActivityCompat.requestPermissions(
                 activity,
@@ -134,9 +149,6 @@ public class JayPermissionManager {
         );
     }
 
-    /**
-     * Requests SMS permission.
-     */
     public void requestSmsPermission(Activity activity) {
         ActivityCompat.requestPermissions(
                 activity,
@@ -144,4 +156,4 @@ public class JayPermissionManager {
                 REQUEST_SMS
         );
     }
-                                 }
+    }

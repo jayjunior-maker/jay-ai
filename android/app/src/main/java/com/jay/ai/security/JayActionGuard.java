@@ -7,53 +7,99 @@ public class JayActionGuard {
     private final Context context;
     private final JayFiveSecondGuard fiveSecondGuard;
     private final JayActionPolicy actionPolicy;
+    private final JaySecurityAuditLogger auditLogger;
 
     public JayActionGuard(Context context) {
         this.context = context.getApplicationContext();
         this.fiveSecondGuard = new JayFiveSecondGuard();
         this.actionPolicy = new JayActionPolicy();
+        this.auditLogger = new JaySecurityAuditLogger();
     }
 
     /**
-     * Evaluates an action and returns the security decision.
+     * Evaluates an action and records the security decision.
      */
     public JaySecurityResult evaluate(JayAction action) {
 
+        JaySecurityResult result;
+
         if (action == null || action.getType() == null) {
-            return new JaySecurityResult(
+
+            result = new JaySecurityResult(
                     JaySecurityResult.Status.BLOCKED,
                     "Sir, I could not identify that action."
             );
+
+            recordAudit(null, result);
+            return result;
         }
 
         JayAction.Type type = action.getType();
 
         if (actionPolicy.isDestructive(type)) {
-            return new JaySecurityResult(
+
+            result = new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_FIVE_SECOND_DELAY,
                     "Sir, this action can permanently change or delete data. "
                             + "A 5-second safety confirmation is required."
             );
+
+            recordAudit(action, result);
+            return result;
         }
 
         if (actionPolicy.requiresPermission(type)) {
-            return new JaySecurityResult(
+
+            result = new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_PERMISSION,
                     "Sir, this action requires the appropriate Android permission."
             );
+
+            recordAudit(action, result);
+            return result;
         }
 
         if (actionPolicy.requiresConfirmation(type)) {
-            return new JaySecurityResult(
+
+            result = new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_CONFIRMATION,
                     "Sir, I need your confirmation before performing this action."
             );
+
+            recordAudit(action, result);
+            return result;
         }
 
-        return new JaySecurityResult(
+        result = new JaySecurityResult(
                 JaySecurityResult.Status.ALLOWED,
                 "Action approved."
         );
+
+        recordAudit(action, result);
+        return result;
+    }
+
+    /**
+     * Records a security decision.
+     */
+    private void recordAudit(
+            JayAction action,
+            JaySecurityResult result) {
+
+        JayAction.Type type = null;
+
+        if (action != null) {
+            type = action.getType();
+        }
+
+        JaySecurityAudit audit = new JaySecurityAudit(
+                System.currentTimeMillis(),
+                type,
+                result.getStatus(),
+                result.getMessage()
+        );
+
+        auditLogger.log(audit);
     }
 
     /**
@@ -79,9 +125,6 @@ public class JayActionGuard {
         return fiveSecondGuard.isWaitingForConfirmation();
     }
 
-    /**
-     * Determines whether an action requires the 5-second delay.
-     */
     public boolean requiresFiveSecondConfirmation(JayAction action) {
 
         if (action == null || action.getType() == null) {
@@ -91,9 +134,6 @@ public class JayActionGuard {
         return actionPolicy.isDestructive(action.getType());
     }
 
-    /**
-     * Determines whether an action requires confirmation.
-     */
     public boolean requiresConfirmation(JayAction action) {
 
         if (action == null || action.getType() == null) {
@@ -103,9 +143,6 @@ public class JayActionGuard {
         return actionPolicy.requiresConfirmation(action.getType());
     }
 
-    /**
-     * Determines whether an action requires permission.
-     */
     public boolean requiresPermission(JayAction action) {
 
         if (action == null || action.getType() == null) {
@@ -115,9 +152,6 @@ public class JayActionGuard {
         return actionPolicy.requiresPermission(action.getType());
     }
 
-    /**
-     * Determines whether an action is sensitive.
-     */
     public boolean isSensitiveAction(JayAction action) {
 
         if (action == null || action.getType() == null) {
@@ -127,9 +161,6 @@ public class JayActionGuard {
         return actionPolicy.isSensitive(action.getType());
     }
 
-    /**
-     * Returns a security message for Jay.
-     */
     public String getSecurityMessage(JayAction action) {
 
         if (action == null || action.getType() == null) {
@@ -155,10 +186,10 @@ public class JayActionGuard {
     }
 
     /**
-     * Returns the application context.
+     * Returns the security audit logger.
      */
-    public Context getContext() {
-        return context;
+    public JaySecurityAuditLogger getAuditLogger() {
+        return auditLogger;
     }
 
     /**
@@ -167,4 +198,11 @@ public class JayActionGuard {
     public JayActionPolicy getActionPolicy() {
         return actionPolicy;
     }
-            }
+
+    /**
+     * Returns the application context.
+     */
+    public Context getContext() {
+        return context;
+    }
+                }

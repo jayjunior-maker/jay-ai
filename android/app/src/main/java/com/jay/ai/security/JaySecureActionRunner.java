@@ -7,6 +7,7 @@ public class JaySecureActionRunner {
     private final JayActionGuard actionGuard;
     private final JayActionExecutor actionExecutor;
     private final JayPermissionManager permissionManager;
+    private final JaySecurityLock securityLock;
 
     public JaySecureActionRunner(
             JayActionGuard actionGuard,
@@ -16,6 +17,7 @@ public class JaySecureActionRunner {
         this.actionGuard = actionGuard;
         this.actionExecutor = actionExecutor;
         this.permissionManager = permissionManager;
+        this.securityLock = new JaySecurityLock();
     }
 
     /**
@@ -24,13 +26,15 @@ public class JaySecureActionRunner {
      */
     public JaySecurityResult checkAction(JayAction action) {
 
+        if (securityLock.isLocked()) {
+            return new JaySecurityResult(
+                    JaySecurityResult.Status.BLOCKED,
+                    "Sir, Jay's protected actions are currently locked."
+            );
+        }
+
         JaySecurityResult result = actionGuard.evaluate(action);
 
-        /*
-         * If the action requires an Android permission,
-         * verify whether that permission has actually
-         * been granted.
-         */
         if (result.needsPermission()) {
 
             if (permissionManager.hasRequiredPermission(action)) {
@@ -75,6 +79,10 @@ public class JaySecureActionRunner {
             Activity activity,
             JayAction action) {
 
+        if (securityLock.isLocked()) {
+            return false;
+        }
+
         String permission =
                 permissionManager.getRequiredPermission(action);
 
@@ -114,6 +122,27 @@ public class JaySecureActionRunner {
         }
     }
 
+    /**
+     * Locks protected Jay actions.
+     */
+    public void lock() {
+        securityLock.lock();
+    }
+
+    /**
+     * Unlocks protected Jay actions.
+     */
+    public void unlock() {
+        securityLock.unlock();
+    }
+
+    /**
+     * Returns whether protected actions are locked.
+     */
+    public boolean isLocked() {
+        return securityLock.isLocked();
+    }
+
     public JayActionGuard getActionGuard() {
         return actionGuard;
     }
@@ -125,4 +154,8 @@ public class JaySecureActionRunner {
     public JayPermissionManager getPermissionManager() {
         return permissionManager;
     }
-            }
+
+    public JaySecurityLock getSecurityLock() {
+        return securityLock;
+    }
+}

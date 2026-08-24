@@ -6,10 +6,12 @@ public class JayActionGuard {
 
     private final Context context;
     private final JayFiveSecondGuard fiveSecondGuard;
+    private final JayActionPolicy actionPolicy;
 
     public JayActionGuard(Context context) {
         this.context = context.getApplicationContext();
         this.fiveSecondGuard = new JayFiveSecondGuard();
+        this.actionPolicy = new JayActionPolicy();
     }
 
     /**
@@ -17,14 +19,16 @@ public class JayActionGuard {
      */
     public JaySecurityResult evaluate(JayAction action) {
 
-        if (action == null) {
+        if (action == null || action.getType() == null) {
             return new JaySecurityResult(
                     JaySecurityResult.Status.BLOCKED,
                     "Sir, I could not identify that action."
             );
         }
 
-        if (action.isDestructive()) {
+        JayAction.Type type = action.getType();
+
+        if (actionPolicy.isDestructive(type)) {
             return new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_FIVE_SECOND_DELAY,
                     "Sir, this action can permanently change or delete data. "
@@ -32,14 +36,14 @@ public class JayActionGuard {
             );
         }
 
-        if (action.requiresPermission()) {
+        if (actionPolicy.requiresPermission(type)) {
             return new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_PERMISSION,
                     "Sir, this action requires the appropriate Android permission."
             );
         }
 
-        if (action.requiresConfirmation()) {
+        if (actionPolicy.requiresConfirmation(type)) {
             return new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_CONFIRMATION,
                     "Sir, I need your confirmation before performing this action."
@@ -53,7 +57,7 @@ public class JayActionGuard {
     }
 
     /**
-     * Starts the 5-second safety countdown for a destructive action.
+     * Starts the 5-second safety countdown.
      */
     public void startFiveSecondGuard(
             JayFiveSecondGuard.ConfirmationListener listener) {
@@ -69,46 +73,58 @@ public class JayActionGuard {
     }
 
     /**
-     * Checks whether the 5-second countdown is currently active.
+     * Checks whether the 5-second countdown is active.
      */
     public boolean isFiveSecondGuardActive() {
         return fiveSecondGuard.isWaitingForConfirmation();
     }
 
     /**
-     * Determines whether an action requires the 5-second safety delay.
+     * Determines whether an action requires the 5-second delay.
      */
     public boolean requiresFiveSecondConfirmation(JayAction action) {
 
-        if (action == null) {
+        if (action == null || action.getType() == null) {
             return false;
         }
 
-        return action.isDestructive();
+        return actionPolicy.isDestructive(action.getType());
     }
 
     /**
-     * Determines whether an action requires explicit confirmation.
+     * Determines whether an action requires confirmation.
      */
     public boolean requiresConfirmation(JayAction action) {
 
-        if (action == null) {
+        if (action == null || action.getType() == null) {
             return false;
         }
 
-        return action.requiresConfirmation();
+        return actionPolicy.requiresConfirmation(action.getType());
     }
 
     /**
-     * Determines whether an action requires an Android permission.
+     * Determines whether an action requires permission.
      */
     public boolean requiresPermission(JayAction action) {
 
-        if (action == null) {
+        if (action == null || action.getType() == null) {
             return false;
         }
 
-        return action.requiresPermission();
+        return actionPolicy.requiresPermission(action.getType());
+    }
+
+    /**
+     * Determines whether an action is sensitive.
+     */
+    public boolean isSensitiveAction(JayAction action) {
+
+        if (action == null || action.getType() == null) {
+            return false;
+        }
+
+        return actionPolicy.isSensitive(action.getType());
     }
 
     /**
@@ -116,21 +132,23 @@ public class JayActionGuard {
      */
     public String getSecurityMessage(JayAction action) {
 
-        if (action == null) {
+        if (action == null || action.getType() == null) {
             return "Sir, I could not identify that action.";
         }
 
-        if (action.isDestructive()) {
+        JayAction.Type type = action.getType();
+
+        if (actionPolicy.isDestructive(type)) {
             return "Sir, this action can permanently change or delete data. "
                     + "A 5-second safety confirmation is required.";
         }
 
-        if (action.requiresConfirmation()) {
-            return "Sir, I need your confirmation before performing this action.";
+        if (actionPolicy.requiresPermission(type)) {
+            return "Sir, this action requires the appropriate Android permission.";
         }
 
-        if (action.requiresPermission()) {
-            return "Sir, this action requires the appropriate Android permission.";
+        if (actionPolicy.requiresConfirmation(type)) {
+            return "Sir, I need your confirmation before performing this action.";
         }
 
         return "Action approved.";
@@ -142,4 +160,11 @@ public class JayActionGuard {
     public Context getContext() {
         return context;
     }
+
+    /**
+     * Returns the action policy.
+     */
+    public JayActionPolicy getActionPolicy() {
+        return actionPolicy;
     }
+            }

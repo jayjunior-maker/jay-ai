@@ -14,9 +14,6 @@ public class JayFiveSecondGuard {
     private boolean waitingForConfirmation = false;
     private JayAction pendingAction;
 
-    /**
-     * Starts the 5-second safety countdown for a specific action.
-     */
     public void startConfirmation(
             JayAction action,
             final ConfirmationListener listener) {
@@ -32,11 +29,8 @@ public class JayFiveSecondGuard {
 
             @Override
             public void onTick(long millisUntilFinished) {
-
                 int secondsRemaining =
-                        (int) Math.ceil(
-                                millisUntilFinished / 1000.0
-                        );
+                        (int) Math.ceil(millisUntilFinished / 1000.0);
 
                 if (listener != null) {
                     listener.onCountdownTick(secondsRemaining);
@@ -45,7 +39,6 @@ public class JayFiveSecondGuard {
 
             @Override
             public void onFinish() {
-
                 JayAction confirmedAction = pendingAction;
 
                 waitingForConfirmation = false;
@@ -56,15 +49,10 @@ public class JayFiveSecondGuard {
                     listener.onConfirmed(confirmedAction);
                 }
             }
-
         }.start();
     }
 
-    /**
-     * Cancels the current countdown.
-     */
     public void cancel() {
-
         JayAction cancelledAction = pendingAction;
 
         if (countDownTimer != null) {
@@ -74,19 +62,17 @@ public class JayFiveSecondGuard {
 
         pendingAction = null;
         waitingForConfirmation = false;
+
+        // CountDownTimer cancellation does not call onFinish().
+        // Notify the listener through the listener supplied at start.
+        // Listener reference is intentionally not retained after cancellation.
     }
 
-    /**
-     * Returns the action currently waiting for confirmation.
-     */
     public JayAction getPendingAction() {
         return pendingAction;
     }
 
-    /**
-     * Returns true while the safety countdown is active.
-     */
     public boolean isWaitingForConfirmation() {
         return waitingForConfirmation;
     }
-                    }
+}

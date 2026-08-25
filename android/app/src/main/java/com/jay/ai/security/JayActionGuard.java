@@ -17,7 +17,7 @@ public class JayActionGuard {
     }
 
     /**
-     * Evaluates an action and records the security decision.
+     * Evaluates an action before it can be executed.
      */
     public JaySecurityResult evaluate(JayAction action) {
 
@@ -30,7 +30,7 @@ public class JayActionGuard {
                     "Sir, I could not identify that action."
             );
 
-            recordAudit(null, result);
+            recordAudit(action, result);
             return result;
         }
 
@@ -103,13 +103,13 @@ public class JayActionGuard {
     }
 
     /**
-     * Starts the 5-second safety countdown for a specific action.
+     * Starts the five-second safety guard for a specific action.
      */
     public void startFiveSecondGuard(
             JayAction action,
             JayFiveSecondGuard.ConfirmationListener listener) {
 
-        if (action == null) {
+        if (action == null || action.getType() == null) {
             return;
         }
 
@@ -124,21 +124,21 @@ public class JayActionGuard {
     }
 
     /**
-     * Cancels the active 5-second countdown.
+     * Cancels the active five-second guard.
      */
     public void cancelFiveSecondGuard() {
         fiveSecondGuard.cancel();
     }
 
     /**
-     * Checks whether the 5-second countdown is active.
+     * Returns whether the five-second guard is active.
      */
     public boolean isFiveSecondGuardActive() {
         return fiveSecondGuard.isWaitingForConfirmation();
     }
 
     /**
-     * Returns the action currently waiting for confirmation.
+     * Returns the action currently protected by the guard.
      */
     public JayAction getPendingFiveSecondAction() {
         return fiveSecondGuard.getPendingAction();
@@ -215,4 +215,4 @@ public class JayActionGuard {
     public Context getContext() {
         return context;
     }
-    }
+            }

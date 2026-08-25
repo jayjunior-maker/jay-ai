@@ -16,20 +16,14 @@ public class JayActionGuard {
         this.auditLogger = new JaySecurityAuditLogger();
     }
 
-    /**
-     * Evaluates an action before it can be executed.
-     */
     public JaySecurityResult evaluate(JayAction action) {
-
         JaySecurityResult result;
 
         if (action == null || action.getType() == null) {
-
             result = new JaySecurityResult(
                     JaySecurityResult.Status.BLOCKED,
                     "Sir, I could not identify that action."
             );
-
             recordAudit(action, result);
             return result;
         }
@@ -37,35 +31,28 @@ public class JayActionGuard {
         JayAction.Type type = action.getType();
 
         if (actionPolicy.isDestructive(type)) {
-
             result = new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_FIVE_SECOND_DELAY,
-                    "Sir, this action can permanently change or delete data. "
-                            + "A 5-second safety confirmation is required."
+                    "Sir, this action can permanently change or delete data. A 5-second safety confirmation is required."
             );
-
             recordAudit(action, result);
             return result;
         }
 
         if (actionPolicy.requiresPermission(type)) {
-
             result = new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_PERMISSION,
                     "Sir, this action requires the appropriate Android permission."
             );
-
             recordAudit(action, result);
             return result;
         }
 
         if (actionPolicy.requiresConfirmation(type)) {
-
             result = new JaySecurityResult(
                     JaySecurityResult.Status.NEEDS_CONFIRMATION,
                     "Sir, I need your confirmation before performing this action."
             );
-
             recordAudit(action, result);
             return result;
         }
@@ -74,23 +61,12 @@ public class JayActionGuard {
                 JaySecurityResult.Status.ALLOWED,
                 "Action approved."
         );
-
         recordAudit(action, result);
         return result;
     }
 
-    /**
-     * Records a security decision.
-     */
-    private void recordAudit(
-            JayAction action,
-            JaySecurityResult result) {
-
-        JayAction.Type type = null;
-
-        if (action != null) {
-            type = action.getType();
-        }
+    private void recordAudit(JayAction action, JaySecurityResult result) {
+        JayAction.Type type = action == null ? null : action.getType();
 
         JaySecurityAudit audit = new JaySecurityAudit(
                 System.currentTimeMillis(),
@@ -102,9 +78,6 @@ public class JayActionGuard {
         auditLogger.log(audit);
     }
 
-    /**
-     * Starts the five-second safety guard for a specific action.
-     */
     public void startFiveSecondGuard(
             JayAction action,
             JayFiveSecondGuard.ConfirmationListener listener) {
@@ -117,71 +90,46 @@ public class JayActionGuard {
             return;
         }
 
-        fiveSecondGuard.startConfirmation(
-                action,
-                listener
-        );
+        fiveSecondGuard.startConfirmation(action, listener);
     }
 
-    /**
-     * Cancels the active five-second guard.
-     */
     public void cancelFiveSecondGuard() {
         fiveSecondGuard.cancel();
     }
 
-    /**
-     * Returns whether the five-second guard is active.
-     */
     public boolean isFiveSecondGuardActive() {
         return fiveSecondGuard.isWaitingForConfirmation();
     }
 
-    /**
-     * Returns the action currently protected by the guard.
-     */
     public JayAction getPendingFiveSecondAction() {
         return fiveSecondGuard.getPendingAction();
     }
 
     public boolean requiresFiveSecondConfirmation(JayAction action) {
-
-        if (action == null || action.getType() == null) {
-            return false;
-        }
-
-        return actionPolicy.isDestructive(action.getType());
+        return action != null
+                && action.getType() != null
+                && actionPolicy.isDestructive(action.getType());
     }
 
     public boolean requiresConfirmation(JayAction action) {
-
-        if (action == null || action.getType() == null) {
-            return false;
-        }
-
-        return actionPolicy.requiresConfirmation(action.getType());
+        return action != null
+                && action.getType() != null
+                && actionPolicy.requiresConfirmation(action.getType());
     }
 
     public boolean requiresPermission(JayAction action) {
-
-        if (action == null || action.getType() == null) {
-            return false;
-        }
-
-        return actionPolicy.requiresPermission(action.getType());
+        return action != null
+                && action.getType() != null
+                && actionPolicy.requiresPermission(action.getType());
     }
 
     public boolean isSensitiveAction(JayAction action) {
-
-        if (action == null || action.getType() == null) {
-            return false;
-        }
-
-        return actionPolicy.isSensitive(action.getType());
+        return action != null
+                && action.getType() != null
+                && actionPolicy.isSensitive(action.getType());
     }
 
     public String getSecurityMessage(JayAction action) {
-
         if (action == null || action.getType() == null) {
             return "Sir, I could not identify that action.";
         }
@@ -189,8 +137,7 @@ public class JayActionGuard {
         JayAction.Type type = action.getType();
 
         if (actionPolicy.isDestructive(type)) {
-            return "Sir, this action can permanently change or delete data. "
-                    + "A 5-second safety confirmation is required.";
+            return "Sir, this action can permanently change or delete data. A 5-second safety confirmation is required.";
         }
 
         if (actionPolicy.requiresPermission(type)) {
@@ -215,4 +162,4 @@ public class JayActionGuard {
     public Context getContext() {
         return context;
     }
-            }
+}

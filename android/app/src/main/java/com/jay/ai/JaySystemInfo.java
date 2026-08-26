@@ -6,6 +6,7 @@ import android.os.Build;
 import android.view.Display;
 import android.view.WindowManager;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Separate system-information tools; each method returns only its requested category. */
@@ -24,7 +25,9 @@ public final class JaySystemInfo {
                 out.put("usedBytes", Math.max(0L, info.totalMem - info.availMem));
                 out.put("lowMemory", info.lowMemory);
             }
-        } catch (Exception e) { out.put("error", e.getMessage()); }
+        } catch (Exception e) {
+            putError(out, e);
+        }
         return out.toString();
     }
 
@@ -33,7 +36,9 @@ public final class JaySystemInfo {
         try {
             out.put("cores", Runtime.getRuntime().availableProcessors());
             out.put("architecture", Build.SUPPORTED_ABIS.length == 0 ? "unknown" : Build.SUPPORTED_ABIS[0]);
-        } catch (Exception e) { out.put("error", e.getMessage()); }
+        } catch (Exception e) {
+            putError(out, e);
+        }
         return out.toString();
     }
 
@@ -50,7 +55,17 @@ public final class JaySystemInfo {
                 out.put("density", metrics.density);
                 out.put("refreshRateHz", display.getRefreshRate());
             }
-        } catch (Exception e) { out.put("error", e.getMessage()); }
+        } catch (Exception e) {
+            putError(out, e);
+        }
         return out.toString();
+    }
+
+    private static void putError(JSONObject out, Exception error) {
+        try {
+            out.put("error", error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
+        } catch (JSONException ignored) {
+            // Nothing else can be safely added to the result object.
+        }
     }
 }

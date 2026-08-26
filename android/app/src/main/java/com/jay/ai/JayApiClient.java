@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 public class JayApiClient {
 
     private static final String SERVER_URL =
-            "https://vigilant-bassoon-jr546v5qq4xjf5v7j-5000.app.github.dev";
+            "https://musical-adventure-g5rrjww47r2ppx9-5000.app.github.dev";
 
     public interface Callback {
 

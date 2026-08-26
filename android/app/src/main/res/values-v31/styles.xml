@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Jay" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowSplashScreenBackground">#02030B</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/jay_splash_animated</item>
+        <item name="android:windowSplashScreenAnimationDuration">900</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#02030B</item>
+        <item name="android:windowBackground">#02030B</item>
+        <item name="android:statusBarColor">#02030B</item>
+        <item name="android:navigationBarColor">#02030B</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>

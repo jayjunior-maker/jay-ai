@@ -71,18 +71,32 @@ class GeminiProvider(AIProvider):
         if not user_text:
             raise AIProviderError("Gemini received an empty user message.")
 
+        try:
+            from google.genai import types
+        except ImportError as error:
+            raise AIProviderError("The google-genai types module is unavailable.") from error
+
         for attempt in range(1, 4):
             try:
-                interaction = self._client.interactions.create(
-                    model=self.model,
-                    input=user_text,
-                    system_instruction=system or "You are Jay, a helpful personal AI assistant. Address the user as Sir.",
-                    generation_config={"thinking_level": os.environ.get("GEMINI_THINKING_LEVEL", "low")},
+                config = types.GenerateContentConfig(
+                    system_instruction=system or (
+                        "You are Jay, a helpful personal AI assistant. Address the user as Sir."
+                    ),
+                    thinking_config=types.ThinkingConfig(
+                        thinking_level=os.environ.get("GEMINI_THINKING_LEVEL", "low")
+                    ),
                 )
-                reply = (getattr(interaction, "output_text", "") or "").strip()
+                response = self._client.models.generate_content(
+                    model=self.model,
+                    contents=user_text,
+                    config=config,
+                )
+                reply = (getattr(response, "text", "") or "").strip()
                 if not reply:
                     raise AIProviderError("Gemini returned an empty response.")
                 return reply
+            except AIProviderError:
+                raise
             except Exception as error:
                 is_last_attempt = attempt == 3
                 is_rate_limit = "429" in str(error) or "rate" in str(error).lower()
@@ -98,7 +112,9 @@ def get_provider() -> AIProvider:
     """Factory: AI_PROVIDER=gemini|local. Gemini is the default when configured."""
     provider_name = os.environ.get("AI_PROVIDER", "").lower().strip()
     if not provider_name:
-        provider_name = "gemini" if (os.environ.get("GEMINI_API_KEY") or os.environ.get("AI_API_KEY")) else "local"
+        provider_name = "gemini" if (
+            os.environ.get("GEMINI_API_KEY") or os.environ.get("AI_API_KEY")
+        ) else "local"
 
     if provider_name == "local":
         return LocalProvider()

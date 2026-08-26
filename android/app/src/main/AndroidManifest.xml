@@ -13,6 +13,7 @@
 
     <!-- Required for Jay's foreground background service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <application
         android:allowBackup="true"
@@ -22,29 +23,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Jay">
 
-        <!-- Jay main screen -->
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
             android:exported="true">
-
             <intent-filter>
-
                 <action android:name="android.intent.action.MAIN" />
-
-                <category
-                    android:name="android.intent.category.LAUNCHER" />
-
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
-        <!-- Keeps Jay's service running after leaving the app -->
         <service
             android:name=".JayBackgroundService"
             android:enabled="true"
             android:exported="false"
-            android:stopWithTask="false" />
+            android:stopWithTask="false"
+            android:foregroundServiceType="microphone" />
 
     </application>
 

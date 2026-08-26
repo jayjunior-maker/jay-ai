@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import operator
+import os
 import re
 from datetime import datetime
 from typing import Callable, Optional
@@ -99,20 +100,44 @@ def local_answer(message: str) -> Optional[str]:
     return None
 
 
+def _sanitize_provider_error(error: Exception) -> str:
+    """Keep diagnostics useful while preventing an API key from being echoed."""
+    message = str(error) or error.__class__.__name__
+    for key_name in ("GEMINI_API_KEY", "AI_API_KEY"):
+        secret = os.environ.get(key_name)
+        if secret:
+            message = message.replace(secret, "[REDACTED]")
+    return message[:1000]
+
+
 def build_online_answer(message: str, web_search: Callable, article: Callable) -> tuple[str, str]:
-    """Use Gemini when configured, otherwise use public web retrieval."""
+    """Use Gemini when configured; only use web retrieval when Gemini is not configured."""
+    provider = None
     try:
         provider = get_provider()
         if provider.name == "gemini":
-            answer = provider.chat(
-                [{"role": "user", "content": message}],
-                system=SYSTEM_IDENTITY,
+            try:
+                answer = provider.chat(
+                    [{"role": "user", "content": message}],
+                    system=SYSTEM_IDENTITY,
+                )
+                return answer, "gemini"
+            except AIProviderError as error:
+                # Do not silently replace a configured AI brain with Wikipedia.
+                # The diagnostic makes the real Gemini problem visible without
+                # exposing the configured API key.
+                return (
+                    "Gemini connection failed, Sir. Diagnostic: "
+                    + _sanitize_provider_error(error),
+                    "gemini-error",
+                )
+    except AIProviderError as error:
+        if os.environ.get("GEMINI_API_KEY") or os.environ.get("AI_API_KEY"):
+            return (
+                "Gemini configuration failed, Sir. Diagnostic: "
+                + _sanitize_provider_error(error),
+                "gemini-error",
             )
-            return answer, "gemini"
-    except AIProviderError:
-        # Fall back to the public web path so Jay remains useful when Gemini
-        # is not configured, temporarily unavailable, or rate limited.
-        pass
 
     results = web_search(message)
     if not results:

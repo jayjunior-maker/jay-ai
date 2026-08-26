@@ -12,201 +12,103 @@ import java.nio.charset.StandardCharsets;
 
 public class JayApiClient {
 
-    private static final String SERVER_URL =
-            "https://musical-adventure-g5rrjww47r2ppx9-5000.app.github.dev";
-
     public interface Callback {
-
         void onSuccess(String response);
-
         void onError(String error);
     }
 
-    public void chat(
-            String message,
-            Callback callback) {
-
+    public void chat(String message, Callback callback) {
         new Thread(() -> {
-
             HttpURLConnection connection = null;
-
             try {
-
-                if (message == null ||
-                        message.trim().isEmpty()) {
-
-                    callback.onError(
-                            "Message is empty."
-                    );
-
+                if (message == null || message.trim().isEmpty()) {
+                    callback.onError("Message is empty.");
                     return;
                 }
 
-                String endpoint =
-                        SERVER_URL + "/api/chat";
-
-                URL url =
-                        new URL(endpoint);
-
-                connection =
-                        (HttpURLConnection)
-                                url.openConnection();
-
+                URL url = new URL(JayApiConfig.SERVER_URL + JayApiConfig.CHAT_PATH);
+                connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
-
-                connection.setConnectTimeout(
-                        15000
-                );
-
-                connection.setReadTimeout(
-                        30000
-                );
-
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(30000);
                 connection.setDoInput(true);
-
                 connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("Accept", "application/json");
 
-                connection.setRequestProperty(
-                        "Content-Type",
-                        "application/json"
-                );
+                JSONObject request = new JSONObject();
+                request.put("message", message);
+                byte[] data = request.toString().getBytes(StandardCharsets.UTF_8);
+                connection.setFixedLengthStreamingMode(data.length);
 
-                connection.setRequestProperty(
-                        "Accept",
-                        "application/json"
-                );
-
-                JSONObject request =
-                        new JSONObject();
-
-                request.put(
-                        "message",
-                        message
-                );
-
-                byte[] data =
-                        request.toString()
-                                .getBytes(
-                                        StandardCharsets.UTF_8
-                                );
-
-                connection.setFixedLengthStreamingMode(
-                        data.length
-                );
-
-                OutputStream output =
-                        connection.getOutputStream();
-
-                output.write(data);
-
-                output.flush();
-
-                output.close();
-
-                int responseCode =
-                        connection.getResponseCode();
-
-                InputStream stream;
-
-                if (responseCode >= 200 &&
-                        responseCode < 300) {
-
-                    stream =
-                            connection.getInputStream();
-
-                } else {
-
-                    stream =
-                            connection.getErrorStream();
+                try (OutputStream output = connection.getOutputStream()) {
+                    output.write(data);
+                    output.flush();
                 }
 
-                String responseText =
-                        readStream(stream);
+                int responseCode = connection.getResponseCode();
+                InputStream stream = responseCode >= 200 && responseCode < 300
+                        ? connection.getInputStream()
+                        : connection.getErrorStream();
+                String responseText = readStream(stream);
 
-                if (responseCode >= 200 &&
-                        responseCode < 300) {
-
-                    JSONObject response =
-                            new JSONObject(
-                                    responseText
-                            );
-
-                    String reply =
-                            response.optString(
-                                    "reply",
-                                    ""
-                            );
-
+                if (responseCode >= 200 && responseCode < 300) {
+                    JSONObject response = new JSONObject(responseText);
+                    String reply = response.optString("reply", "");
                     if (reply.trim().isEmpty()) {
-
-                        callback.onError(
-                                "Jay's server returned an empty response."
-                        );
-
+                        callback.onError("Jay's server returned an empty response.");
                         return;
                     }
-
-                    callback.onSuccess(
-                            reply
-                    );
-
+                    callback.onSuccess(reply);
                 } else {
-
-                    callback.onError(
-                            "Server error " +
-                            responseCode +
-                            ": " +
-                            responseText
-                    );
+                    callback.onError("Server error " + responseCode + ": " + responseText);
                 }
-
             } catch (Exception e) {
-
-                callback.onError(
-                        "Unable to reach Jay's online brain: " +
-                        e.getMessage()
-                );
-
+                callback.onError("Unable to reach Jay's online brain: " + e.getMessage());
             } finally {
-
-                if (connection != null) {
-
-                    connection.disconnect();
-                }
+                if (connection != null) connection.disconnect();
             }
-
         }).start();
     }
 
-    private String readStream(
-            InputStream stream) throws Exception {
+    public void health(Callback callback) {
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL(JayApiConfig.SERVER_URL + JayApiConfig.HEALTH_PATH);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(10000);
+                connection.setReadTimeout(10000);
+                connection.setRequestProperty("Accept", "application/json");
 
-        if (stream == null) {
+                int responseCode = connection.getResponseCode();
+                InputStream stream = responseCode >= 200 && responseCode < 300
+                        ? connection.getInputStream()
+                        : connection.getErrorStream();
+                String responseText = readStream(stream);
 
-            return "";
+                if (responseCode >= 200 && responseCode < 300) {
+                    callback.onSuccess(responseText);
+                } else {
+                    callback.onError("Health check error " + responseCode + ": " + responseText);
+                }
+            } catch (Exception e) {
+                callback.onError("Jay API unavailable: " + e.getMessage());
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }).start();
+    }
+
+    private String readStream(InputStream stream) throws Exception {
+        if (stream == null) return "";
+        StringBuilder result = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) result.append(line);
         }
-
-        BufferedReader reader =
-                new BufferedReader(
-                        new InputStreamReader(
-                                stream,
-                                StandardCharsets.UTF_8
-                        )
-                );
-
-        StringBuilder result =
-                new StringBuilder();
-
-        String line;
-
-        while ((line =
-                reader.readLine()) != null) {
-
-            result.append(line);
-        }
-
-        reader.close();
-
         return result.toString();
     }
-        }
+}

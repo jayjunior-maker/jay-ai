@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="432dp"
+    android:height="432dp"
+    android:viewportWidth="432"
+    android:viewportHeight="432">
+
+    <group
+        android:name="splashCore"
+        android:pivotX="216"
+        android:pivotY="216">
+
+        <path
+            android:name="splashRing"
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#6648D9FF"
+            android:strokeWidth="8"
+            android:pathData="M216,64 A152,152 0,1 1,215.9,64" />
+
+        <path
+            android:name="splashGlow"
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#5548D9FF"
+            android:strokeWidth="36"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M112,112 L312,112 L312,256 C312,320 276,356 220,356 C168,356 132,328 120,272" />
+
+        <path
+            android:name="splashJ"
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#FF73E8FF"
+            android:strokeWidth="16"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M112,112 L312,112 L312,256 C312,320 276,356 220,356 C168,356 132,328 120,272" />
+
+        <path
+            android:name="splashSpark"
+            android:fillColor="#FFB6F3FF"
+            android:pathData="M216,44 L224,64 L244,72 L224,80 L216,100 L208,80 L188,72 L208,64 Z" />
+    </group>
+</vector>

@@ -10,50 +10,78 @@ public class JayFiveSecondGuard {
         void onCancelled(JayAction action);
     }
 
+    private static final long COUNTDOWN_MS = 5000L;
+    private static final long TICK_MS = 1000L;
+
     private CountDownTimer countDownTimer;
     private boolean waitingForConfirmation = false;
     private JayAction pendingAction;
+    private ConfirmationListener pendingListener;
 
-    public void startConfirmation(
+    public synchronized void startConfirmation(
             JayAction action,
-            final ConfirmationListener listener) {
+            ConfirmationListener listener) {
 
         if (waitingForConfirmation || action == null) {
             return;
         }
 
         pendingAction = action;
+        pendingListener = listener;
         waitingForConfirmation = true;
 
-        countDownTimer = new CountDownTimer(5000, 1000) {
+        countDownTimer = new CountDownTimer(
+                COUNTDOWN_MS,
+                TICK_MS) {
 
             @Override
             public void onTick(long millisUntilFinished) {
                 int secondsRemaining =
-                        (int) Math.ceil(millisUntilFinished / 1000.0);
+                        (int) Math.ceil(
+                                millisUntilFinished / 1000.0
+                        );
 
-                if (listener != null) {
-                    listener.onCountdownTick(secondsRemaining);
+                ConfirmationListener currentListener;
+
+                synchronized (JayFiveSecondGuard.this) {
+                    currentListener = pendingListener;
+                }
+
+                if (currentListener != null) {
+                    currentListener.onCountdownTick(
+                            secondsRemaining
+                    );
                 }
             }
 
             @Override
             public void onFinish() {
-                JayAction confirmedAction = pendingAction;
+                JayAction confirmedAction;
+                ConfirmationListener currentListener;
 
-                waitingForConfirmation = false;
-                pendingAction = null;
-                countDownTimer = null;
+                synchronized (JayFiveSecondGuard.this) {
+                    confirmedAction = pendingAction;
+                    currentListener = pendingListener;
 
-                if (listener != null) {
-                    listener.onConfirmed(confirmedAction);
+                    waitingForConfirmation = false;
+                    pendingAction = null;
+                    pendingListener = null;
+                    countDownTimer = null;
+                }
+
+                if (currentListener != null &&
+                        confirmedAction != null) {
+                    currentListener.onConfirmed(
+                            confirmedAction
+                    );
                 }
             }
         }.start();
     }
 
-    public void cancel() {
+    public synchronized void cancel() {
         JayAction cancelledAction = pendingAction;
+        ConfirmationListener currentListener = pendingListener;
 
         if (countDownTimer != null) {
             countDownTimer.cancel();
@@ -61,18 +89,22 @@ public class JayFiveSecondGuard {
         }
 
         pendingAction = null;
+        pendingListener = null;
         waitingForConfirmation = false;
 
-        // CountDownTimer cancellation does not call onFinish().
-        // Notify the listener through the listener supplied at start.
-        // Listener reference is intentionally not retained after cancellation.
+        if (currentListener != null &&
+                cancelledAction != null) {
+            currentListener.onCancelled(
+                    cancelledAction
+            );
+        }
     }
 
-    public JayAction getPendingAction() {
+    public synchronized JayAction getPendingAction() {
         return pendingAction;
     }
 
-    public boolean isWaitingForConfirmation() {
+    public synchronized boolean isWaitingForConfirmation() {
         return waitingForConfirmation;
     }
 }

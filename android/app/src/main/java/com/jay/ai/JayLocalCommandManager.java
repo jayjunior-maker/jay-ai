@@ -2,9 +2,9 @@ package com.jay.ai;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.provider.MediaStore;
 import android.provider.Settings;
 
@@ -39,8 +39,12 @@ public final class JayLocalCommandManager {
             return JayDeviceTools.getBattery(context) + ".";
         }
 
-        if (containsAny(text, "network speed", "internet speed", "speed ya network", "network information", "network info")) {
+        if (containsAny(text, "network speed", "internet speed", "speed ya network")) {
             return JayDeviceTools.getNetwork(context) + "\n" + JayDeviceTools.getNetworkSpeed(context);
+        }
+
+        if (containsAny(text, "network information", "network info")) {
+            return JayDeviceTools.getNetwork(context);
         }
 
         if (containsAny(text, "phone information", "phone info", "device information", "device info", "information about my phone", "about my phone")) {
@@ -52,17 +56,15 @@ public final class JayLocalCommandManager {
         }
 
         if (containsAny(text, "turn torch on", "turn flashlight on", "torch on", "flashlight on", "wash torch", "washa torch")) {
-            return "TORCH_ON";
+            return setTorch(true);
         }
         if (containsAny(text, "turn torch off", "turn flashlight off", "torch off", "flashlight off", "zima torch")) {
-            return "TORCH_OFF";
+            return setTorch(false);
         }
 
         if (text.contains("volume") || text.contains("sound level") || text.contains("sauti")) {
             Integer percent = extractPercent(text);
-            if (percent != null) {
-                return setVolume(percent);
-            }
+            if (percent != null) return setVolume(percent);
         }
 
         if (containsAny(text, "open settings", "open phone settings", "fungua settings", "fungua mipangilio")) {
@@ -102,16 +104,33 @@ public final class JayLocalCommandManager {
         AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         if (audio == null) return "I couldn't access the phone volume, Sir.";
         int max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int target = Math.round(max * safe / 100f);
-        audio.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0);
+        audio.setStreamVolume(AudioManager.STREAM_MUSIC, Math.round(max * safe / 100f), 0);
         return "Media volume set to " + safe + "%, Sir.";
+    }
+
+    private String setTorch(boolean enabled) {
+        try {
+            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            if (manager == null) return "This phone does not expose a flashlight control, Sir.";
+            for (String id : manager.getCameraIdList()) {
+                CameraCharacteristics c = manager.getCameraCharacteristics(id);
+                Boolean flash = c.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                Integer facing = c.get(CameraCharacteristics.LENS_FACING);
+                if (Boolean.TRUE.equals(flash) && (facing == null || facing == CameraCharacteristics.LENS_FACING_BACK)) {
+                    manager.setTorchMode(id, enabled);
+                    return enabled ? "Torch turned on, Sir." : "Torch turned off, Sir.";
+                }
+            }
+            return "I couldn't find a flashlight on this phone, Sir.";
+        } catch (Exception e) {
+            return "I couldn't control the torch, Sir.";
+        }
     }
 
     private Integer extractPercent(String text) {
         int p = text.indexOf('%');
         if (p <= 0) return null;
-        int end = p;
-        int start = end - 1;
+        int end = p, start = end - 1;
         while (start >= 0 && Character.isDigit(text.charAt(start))) start--;
         if (start == end - 1) return null;
         try { return Integer.parseInt(text.substring(start + 1, end)); }
@@ -120,8 +139,7 @@ public final class JayLocalCommandManager {
 
     private String openSettings(String action) {
         try {
-            Intent intent = new Intent(action);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            Intent intent = new Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             if (intent.resolveActivity(context.getPackageManager()) == null) intent = new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
             return "Opening Settings, Sir.";

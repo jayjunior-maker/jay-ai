@@ -3,14 +3,12 @@ package com.jay.ai;
 import android.content.Context;
 import java.util.Locale;
 
-/** Local, user-controlled learning layer for Jay. */
+/** Local, consent-aware learning layer for Jay. */
 public final class JayLearningManager {
-    private final Context context;
     private final JayDatabase database;
 
     public JayLearningManager(Context context) {
-        this.context = context.getApplicationContext();
-        this.database = new JayDatabase(this.context);
+        this.database = new JayDatabase(context.getApplicationContext());
     }
 
     public void learn(String key, String value) {
@@ -40,14 +38,34 @@ public final class JayLearningManager {
         return false;
     }
 
-    public String learningResponse() {
-        return "Understood, Sir. I'll remember that locally.";
+    /** Records a repeated command without silently declaring it a permanent preference. */
+    public void observeCommand(String command) {
+        if (command == null || command.trim().isEmpty()) return;
+        String normalized = command.trim().toLowerCase(Locale.ROOT);
+        String key = "pattern_" + normalized;
+        String existing = remember(key);
+        int count = 1;
+        if (existing != null) {
+            try { count = Integer.parseInt(existing) + 1; } catch (NumberFormatException ignored) { }
+        }
+        learn(key, String.valueOf(count));
     }
 
-    public String questionForRepeatedPattern(String message) {
+    /** Returns a question only after the same command/pattern has been observed repeatedly. */
+    public String questionForObservedPattern(String message) {
         if (message == null || message.trim().isEmpty()) return null;
-        String lower = message.toLowerCase(Locale.ROOT);
-        if (lower.contains("remember") || lower.contains("learn")) return null;
+        String normalized = message.trim().toLowerCase(Locale.ROOT);
+        if (normalized.startsWith("remember ") || normalized.startsWith("learn ")) return null;
+        String countText = remember("pattern_" + normalized);
+        if (countText == null) return null;
+        try {
+            int count = Integer.parseInt(countText);
+            if (count == 3) return "Sir, I noticed you do this repeatedly. Would you like me to remember it as a preference or routine?";
+        } catch (NumberFormatException ignored) { }
         return null;
+    }
+
+    public String learningResponse() {
+        return "Understood, Sir. I'll remember that locally.";
     }
 }

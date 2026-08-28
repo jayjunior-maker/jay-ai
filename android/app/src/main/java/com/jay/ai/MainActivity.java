@@ -13,6 +13,7 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.Voice;
 import android.view.Gravity;
 import android.view.Window;
 import android.view.WindowManager;
@@ -24,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
@@ -37,7 +39,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private TextView conversation;
     private EditText inputBox;
     private boolean voiceReady = false;
-    private final float jayPitch = 0.75f;
+
+    // Jay voice profile: deep, calm, confident, smooth, low-pitched, moderate speed.
+    private final float jayPitch = 0.65f;
     private final float jaySpeed = 0.90f;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -287,9 +291,32 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         if (status == TextToSpeech.SUCCESS) {
             voiceReady = true;
             jayVoice.setLanguage(Locale.US);
+            selectPreferredJayVoice();
             jayVoice.setPitch(jayPitch);
             jayVoice.setSpeechRate(jaySpeed);
         } else voiceReady = false;
+    }
+
+    /** Prefer an installed English voice advertising a male voice feature; otherwise keep the system English voice. */
+    private void selectPreferredJayVoice() {
+        try {
+            List<Voice> voices = new ArrayList<>(jayVoice.getVoices());
+            Voice fallback = null;
+            for (Voice voice : voices) {
+                Locale locale = voice.getLocale();
+                if (locale == null || !"en".equalsIgnoreCase(locale.getLanguage())) continue;
+                if (fallback == null) fallback = voice;
+                String features = voice.getFeatures() == null ? "" : voice.getFeatures().toString().toLowerCase(Locale.ROOT);
+                String name = voice.getName() == null ? "" : voice.getName().toLowerCase(Locale.ROOT);
+                if (features.contains("gender=male") || features.contains("gender:male") || name.contains("male")) {
+                    jayVoice.setVoice(voice);
+                    return;
+                }
+            }
+            if (fallback != null) jayVoice.setVoice(fallback);
+        } catch (Exception ignored) {
+            // Keep the default TTS voice if the Android engine does not expose selectable voices.
+        }
     }
 
     private void speak(String text) { if (voiceReady && jayVoice != null && text != null && !text.trim().isEmpty()) jayVoice.speak(text, TextToSpeech.QUEUE_FLUSH, null, "JAY_RESPONSE"); }

@@ -22,10 +22,7 @@ public class JayBrain {
         String math = JayMathEngine.trySolve(input);
         if (math != null) return math;
         String local = localCommands.handle(input);
-        if (local != null && !local.trim().isEmpty()) {
-            learningManager.observeCommand(input);
-            return local;
-        }
+        if (local != null && !local.trim().isEmpty()) { learningManager.observeCommand(input); return local; }
         String text = input.trim().toLowerCase(Locale.ROOT);
         if (containsAny(text,"hello","hi","hey","habari","mambo","niaje","sasa")) return "Hello, Sir. Jay is ready.";
         if (containsAny(text,"who are you","what are you","wewe ni nani","jay ni nani")) return "I'm Jay, your personal AI assistant, Sir.";

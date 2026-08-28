@@ -1,27 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- Microphone for Jay voice recognition -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <!-- Internet for Jay's online AI brain -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- Installed-app discovery -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-
-    <!-- Contact lookup and phone calls -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-
-    <!-- Camera capture -->
     <uses-permission android:name="android.permission.CAMERA" />
-
-    <!-- Required for Jay's foreground background service -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-
     <application
         android:allowBackup="true"
         android:label="Jay"
@@ -29,24 +17,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Jay">
-
-        <activity
-            android:name=".MainActivity"
-            android:screenOrientation="portrait"
-            android:exported="true">
+        <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".JayBackgroundService"
-            android:enabled="true"
-            android:exported="false"
-            android:stopWithTask="false"
-            android:foregroundServiceType="microphone" />
-
+        <service android:name=".JayBackgroundService" android:enabled="true" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="microphone" />
     </application>
-
 </manifest>

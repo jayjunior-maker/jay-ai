@@ -28,74 +28,52 @@ public final class JayLocalCommandManager {
 
     public String handle(String input) {
         if (input == null || input.trim().isEmpty()) return null;
-        String text = input.trim().toLowerCase(Locale.ROOT);
+        String original = input.trim();
+        String text = original.toLowerCase(Locale.ROOT);
 
         if (containsAny(text, "what's the time", "what is the time", "what time is it", "time now", "current time", "saa ngapi", "saa ni ngapi")) {
             String time = DateFormat.getTimeInstance(DateFormat.SHORT, Locale.getDefault()).format(new Date());
             return "The time is " + time + ", Sir.";
         }
-
         if (containsAny(text, "battery", "bata", "beteri", "beteri status", "battery status", "battery health")) {
             return JayDeviceTools.getBattery(context) + ".";
         }
-
         if (containsAny(text, "network speed", "internet speed", "speed ya network")) {
             return JayDeviceTools.getNetwork(context) + "\n" + JayDeviceTools.getNetworkSpeed(context);
         }
-
-        if (containsAny(text, "network information", "network info")) {
-            return JayDeviceTools.getNetwork(context);
-        }
-
+        if (containsAny(text, "network information", "network info")) return JayDeviceTools.getNetwork(context);
         if (containsAny(text, "phone information", "phone info", "device information", "device info", "information about my phone", "about my phone")) {
             return JayDeviceTools.getDevice(context) + "\n" + JayDeviceTools.getBattery(context) + "\n" + JayDeviceTools.getStorage(context) + "\n" + JayDeviceTools.getNetwork(context);
         }
-
-        if (containsAny(text, "my location", "my current location", "where am i", "location yangu", "niko wapi")) {
-            return "LOCATION_REQUEST";
-        }
-
-        if (containsAny(text, "turn torch on", "turn flashlight on", "torch on", "flashlight on", "wash torch", "washa torch")) {
-            return setTorch(true);
-        }
-        if (containsAny(text, "turn torch off", "turn flashlight off", "torch off", "flashlight off", "zima torch")) {
-            return setTorch(false);
-        }
-
+        if (containsAny(text, "my location", "my current location", "where am i", "location yangu", "niko wapi")) return "LOCATION_REQUEST";
+        if (containsAny(text, "turn torch on", "turn flashlight on", "torch on", "flashlight on", "wash torch", "washa torch")) return setTorch(true);
+        if (containsAny(text, "turn torch off", "turn flashlight off", "torch off", "flashlight off", "zima torch")) return setTorch(false);
         if (text.contains("volume") || text.contains("sound level") || text.contains("sauti")) {
             Integer percent = extractPercent(text);
             if (percent != null) return setVolume(percent);
         }
 
-        if (containsAny(text, "open settings", "open phone settings", "fungua settings", "fungua mipangilio")) {
-            if (text.contains("developer options") || text.contains("developer mode") || text.contains("developer settings")) {
-                return openSettings(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
-            }
-            return openSettings(Settings.ACTION_SETTINGS);
+        // Handle chained Android navigation such as "open settings and then developer options".
+        if (text.contains("settings") && (text.contains("developer options") || text.contains("developer mode") || text.contains("developer settings"))) {
+            return openSettings(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
         }
-
-        if (containsAny(text, "open camera", "open the camera", "camera", "fungua camera", "fungua kamera")) {
-            return openCamera();
-        }
+        if (containsAny(text, "open settings", "open phone settings", "fungua settings", "fungua mipangilio")) return openSettings(Settings.ACTION_SETTINGS);
+        if (containsAny(text, "open camera", "open the camera", "camera", "fungua camera", "fungua kamera")) return openCamera();
 
         if (text.startsWith("call ") || text.startsWith("piga simu ") || text.startsWith("pigia ")) {
-            String name = text.startsWith("call ") ? input.trim().substring(5).trim()
-                    : text.startsWith("piga simu ") ? input.trim().substring(10).trim() : input.trim().substring(6).trim();
+            String name = text.startsWith("call ") ? original.substring(5).trim() : text.startsWith("piga simu ") ? original.substring(10).trim() : original.substring(6).trim();
             return callContact(name);
         }
 
         if (text.startsWith("open ")) {
-            String appName = input.trim().substring(5).trim();
-            if (!appName.isEmpty() && !appName.equalsIgnoreCase("settings") && !appName.equalsIgnoreCase("camera") && !appName.equalsIgnoreCase("phone") && !appName.equalsIgnoreCase("calendar")) {
+            String appName = original.substring(5).trim();
+            if (!appName.isEmpty()) {
                 String result = appManager.openApp(appName);
                 if (result.startsWith("OPENED_APP:")) return "Opening " + result.substring("OPENED_APP:".length()) + ", Sir.";
                 return result;
             }
         }
-
-        if (containsAny(text, "delete the file", "delete file", "delete this file", "futa file", "futa faili")) {
-            return "Sir, I need the specific file selected or identified before I can delete it. A 5-second safety confirmation will be required before deletion.";
-        }
+        if (containsAny(text, "delete the file", "delete file", "delete this file", "futa file", "futa faili")) return "Sir, I need the specific file selected or identified before I can delete it. A 5-second safety confirmation will be required before deletion.";
         return null;
     }
 
@@ -122,19 +100,16 @@ public final class JayLocalCommandManager {
                 }
             }
             return "I couldn't find a flashlight on this phone, Sir.";
-        } catch (Exception e) {
-            return "I couldn't control the torch, Sir.";
-        }
+        } catch (Exception e) { return "I couldn't control the torch, Sir."; }
     }
 
     private Integer extractPercent(String text) {
         int p = text.indexOf('%');
         if (p <= 0) return null;
-        int end = p, start = end - 1;
+        int start = p - 1;
         while (start >= 0 && Character.isDigit(text.charAt(start))) start--;
-        if (start == end - 1) return null;
-        try { return Integer.parseInt(text.substring(start + 1, end)); }
-        catch (NumberFormatException e) { return null; }
+        if (start == p - 1) return null;
+        try { return Integer.parseInt(text.substring(start + 1, p)); } catch (NumberFormatException e) { return null; }
     }
 
     private String openSettings(String action) {
@@ -171,8 +146,5 @@ public final class JayLocalCommandManager {
         return "I couldn't start the call to " + parts[1] + ", Sir.";
     }
 
-    private boolean containsAny(String text, String... words) {
-        for (String word : words) if (text.contains(word)) return true;
-        return false;
-    }
+    private boolean containsAny(String text, String... words) { for (String word : words) if (text.contains(word)) return true; return false; }
 }

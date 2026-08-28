@@ -9,6 +9,7 @@ public class JayBrain {
     private final JayLocalCommandManager localCommands;
     private final JayLearningManager learningManager;
     private final JayVlcController musicController;
+    private final JayAlarmController alarmController;
 
     public JayBrain(Context context) {
         this.database = new JayDatabase(context);
@@ -16,6 +17,7 @@ public class JayBrain {
         this.localCommands = new JayLocalCommandManager(context);
         this.learningManager = new JayLearningManager(context);
         this.musicController = new JayVlcController(context);
+        this.alarmController = new JayAlarmController(context);
     }
 
     public String think(String input) {
@@ -25,6 +27,18 @@ public class JayBrain {
         if (math != null) return math;
 
         String text = input.trim().toLowerCase(Locale.ROOT);
+
+        // Alarms are a local phone action. Handle them before the normal local
+        // executor and before any online fallback so offline Jay can set them.
+        if (isAlarmRequest(text)) {
+            String timeRequest = extractAlarmTime(input);
+            if (timeRequest != null) {
+                String alarm = alarmController.setAlarm(timeRequest);
+                learningManager.observeCommand(input);
+                return alarm;
+            }
+        }
+
         // Handle media commands locally before any online fallback. This keeps
         // playback controls working when the phone has no internet connection.
         if (text.contains("vlc") && (text.contains("play") || text.contains("open"))) {
@@ -40,8 +54,6 @@ public class JayBrain {
             }
         }
 
-        // Understand natural language first, then hand the safe canonical action to the
-        // existing local executor. Understanding itself never performs a device action.
         JayCommandUnderstanding.Result understood = JayCommandUnderstanding.understand(input);
         String canonical = canonicalCommand(understood);
         if (canonical != null) {
@@ -73,44 +85,45 @@ public class JayBrain {
         return "ONLINE_REQUIRED";
     }
 
+    private boolean isAlarmRequest(String text) {
+        return containsAny(text,
+                "set alarm", "set an alarm", "create alarm", "create an alarm",
+                "wake me up", "wake me", "niamshe", "alarm for", "alarm at");
+    }
+
+    private String extractAlarmTime(String input) {
+        if (input == null) return null;
+        String s = input.trim();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                "(?i)(?:at|for)\\s+(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)?").matcher(s);
+        if (m.find()) return m.group(1) + (m.group(2) == null ? "" : ":" + m.group(2)) + (m.group(3) == null ? "" : " " + m.group(3));
+        m = java.util.regex.Pattern.compile("(?i)\\b(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)\\b").matcher(s);
+        if (m.find()) return m.group(1) + (m.group(2) == null ? "" : ":" + m.group(2)) + " " + m.group(3);
+        return null;
+    }
+
     private String canonicalCommand(JayCommandUnderstanding.Result r) {
         if (r == null) return null;
         switch (r.intent) {
-            case OPEN_SETTINGS:
-                if (r.steps.isEmpty()) return "open settings";
-                return "open settings";
-            case OPEN_APP:
-                return "open " + r.target;
-            case PLAY_MUSIC:
-                return r.target == null || r.target.isEmpty() ? "play music" : "play " + r.target;
-            case STOP_MUSIC:
-                return "stop music";
-            case PAUSE_MUSIC:
-                return "pause music";
-            case RESUME_MUSIC:
-                return "resume music";
-            case NEXT_MUSIC:
-                return "next music";
-            case PREVIOUS_MUSIC:
-                return "previous music";
-            case CALL_CONTACT:
-                return "call " + r.target;
-            case SEND_MESSAGE:
-                return "whatsapp text " + r.target + " saying " + r.message;
-            case SET_ALARM:
-                return "set alarm for " + r.target;
-            case CANCEL_ALARM:
-                return r.target.isEmpty() ? "cancel alarm" : "cancel alarm for " + r.target;
-            case NETWORK_STATUS:
-                return "network status";
-            case DEVICE_NAVIGATION:
-                return "open " + r.target;
+            case OPEN_SETTINGS: return "open settings";
+            case OPEN_APP: return "open " + r.target;
+            case PLAY_MUSIC: return r.target == null || r.target.isEmpty() ? "play music" : "play " + r.target;
+            case STOP_MUSIC: return "stop music";
+            case PAUSE_MUSIC: return "pause music";
+            case RESUME_MUSIC: return "resume music";
+            case NEXT_MUSIC: return "next music";
+            case PREVIOUS_MUSIC: return "previous music";
+            case CALL_CONTACT: return "call " + r.target;
+            case SEND_MESSAGE: return "whatsapp text " + r.target + " saying " + r.message;
+            case SET_ALARM: return "set alarm for " + r.target;
+            case CANCEL_ALARM: return r.target.isEmpty() ? "cancel alarm" : "cancel alarm for " + r.target;
+            case NETWORK_STATUS: return "network status";
+            case DEVICE_NAVIGATION: return "open " + r.target;
             case CLEAR_CHAT:
             case CHECK_UPDATE:
             case MPESA_BALANCE:
             case UNKNOWN:
-            default:
-                return null;
+            default: return null;
         }
     }
 

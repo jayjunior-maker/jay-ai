@@ -41,6 +41,15 @@ jobs:
         working-directory: android
         run: chmod +x ./gradlew
 
+      - name: Source sanity check
+        working-directory: android
+        run: |
+          if grep -R "ACTION_CHANGE_LIVE_WALLPAPER" -n app/src/main/java; then
+            echo "Invalid Android Intent constant found in source."
+            exit 1
+          fi
+          test -f app/src/main/java/com/jay/ai/JayRainbowBorderDrawable.java
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew clean assembleDebug --no-daemon --stacktrace --console=plain

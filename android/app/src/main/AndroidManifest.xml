@@ -8,8 +8,15 @@
     <!-- Internet for Jay's online AI brain -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Allows Jay to query installed apps -->
+    <!-- Installed-app discovery -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- Contact lookup and phone calls -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    <!-- Camera capture -->
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <!-- Required for Jay's foreground background service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

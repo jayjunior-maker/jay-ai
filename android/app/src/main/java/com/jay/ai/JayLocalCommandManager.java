@@ -8,6 +8,7 @@ import android.media.AudioManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -31,12 +32,14 @@ public final class JayLocalCommandManager {
         if (input == null || input.trim().isEmpty()) return null;
         String original = input.trim();
         String text = original.toLowerCase(Locale.ROOT);
-        if (containsAny(text, "what's the time", "what is the time", "what time is it", "time now", "current time", "saa ngapi", "saa ni ngapi")) return "The time is " + DateFormat.getTimeInstance(DateFormat.SHORT, Locale.getDefault()).format(new Date()) + ", Sir.";
+
+        if (isTimeCommand(text)) return "The time is " + DateFormat.getTimeInstance(DateFormat.SHORT, Locale.getDefault()).format(new Date()) + ", Sir.";
+        if (isDateCommand(text)) return "Today is " + new SimpleDateFormat("EEEE, d MMMM yyyy", Locale.getDefault()).format(new Date()) + ", Sir.";
         if (containsAny(text, "battery", "bata", "beteri", "beteri status", "battery status", "battery health")) return JayDeviceTools.getBattery(context) + ".";
         if (containsAny(text, "network speed", "internet speed", "speed ya network")) return JayDeviceTools.getNetwork(context) + "\n" + JayDeviceTools.getNetworkSpeed(context);
-        if (containsAny(text, "network information", "network info")) return JayDeviceTools.getNetwork(context);
+        if (containsAny(text, "network information", "network info", "network status", "net status", "net")) return JayDeviceTools.getNetwork(context);
         if (containsAny(text, "phone information", "phone info", "device information", "device info", "information about my phone", "about my phone")) return JayDeviceTools.getDevice(context) + "\n" + JayDeviceTools.getBattery(context) + "\n" + JayDeviceTools.getStorage(context) + "\n" + JayDeviceTools.getNetwork(context);
-        if (containsAny(text, "my location", "my current location", "where am i", "location yangu", "niko wapi")) return "LOCATION_REQUEST";
+        if (containsAny(text, "my location", "my current location", "where am i", "location yangu", "niko wapi", "location")) return "LOCATION_REQUEST";
         if (containsAny(text, "turn torch on", "turn flashlight on", "torch on", "flashlight on", "wash torch", "washa torch")) return setTorch(true);
         if (containsAny(text, "turn torch off", "turn flashlight off", "torch off", "flashlight off", "zima torch")) return setTorch(false);
         if (text.contains("volume") || text.contains("sound level") || text.contains("sauti")) { Integer percent = extractPercent(text); if (percent != null) return setVolume(percent); }
@@ -47,10 +50,28 @@ public final class JayLocalCommandManager {
         if (text.contains("settings") && (text.contains("developer options") || text.contains("developer mode") || text.contains("developer settings"))) return openSettings(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
         if (containsAny(text, "open settings", "open phone settings", "fungua settings", "fungua mipangilio")) return openSettings(Settings.ACTION_SETTINGS);
         if (containsAny(text, "open camera", "open the camera", "camera", "fungua camera", "fungua kamera")) return openCamera();
-        if (text.startsWith("call ") || text.startsWith("piga simu ") || text.startsWith("pigia ")) { String name = text.startsWith("call ") ? original.substring(5).trim() : text.startsWith("piga simu ") ? original.substring(10).trim() : original.substring(6).trim(); return callContact(name); }
-        if (text.startsWith("open ")) { String appName = original.substring(5).trim(); if (!appName.isEmpty()) { String result = appManager.openApp(appName); if (result.startsWith("OPENED_APP:")) return "Opening " + result.substring("OPENED_APP:".length()) + ", Sir."; return result; } }
+        if (text.startsWith("call ") || text.startsWith("piga simu ") || text.startsWith("pigia ")) {
+            String name = text.startsWith("call ") ? original.substring(5).trim() : text.startsWith("piga simu ") ? original.substring(10).trim() : original.substring(6).trim();
+            return callContact(name);
+        }
+        if (text.startsWith("open ")) {
+            String appName = original.substring(5).trim();
+            if (!appName.isEmpty()) {
+                String result = appManager.openApp(appName);
+                if (result.startsWith("OPENED_APP:")) return "Opening " + result.substring("OPENED_APP:".length()) + ", Sir.";
+                return result;
+            }
+        }
         if (containsAny(text, "delete the file", "delete file", "delete this file", "futa file", "futa faili")) return "Sir, I need the specific file selected or identified before I can delete it. A 5-second safety confirmation will be required before deletion.";
         return null;
+    }
+
+    private boolean isTimeCommand(String text) {
+        return text.equals("time") || text.equals("what time") || text.equals("time now") || text.equals("what is the time") || text.equals("what's the time") || text.equals("what time is it") || text.contains("current time") || text.contains("saa ngapi") || text.contains("saa ni ngapi");
+    }
+
+    private boolean isDateCommand(String text) {
+        return text.equals("today") || text.equals("what is today") || text.equals("when is today") || text.equals("date") || text.equals("what date is it") || text.equals("leo ni lini") || text.equals("leo ni tarehe gani") || text.contains("today's date");
     }
 
     private String handleBackgroundCommand(String text) {
@@ -58,10 +79,7 @@ public final class JayLocalCommandManager {
             try { Intent i = new Intent(Intent.ACTION_SET_WALLPAPER); i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(i); return "Opening the wallpaper selector, Sir."; }
             catch (Exception e) { return "I couldn't open the wallpaper selector, Sir."; }
         }
-        if (containsAny(text, "restore default background", "reset background", "default background")) {
-            JayAppearanceManager.reset(context);
-            return "Jay's background has been restored to the default, Sir.";
-        }
+        if (containsAny(text, "restore default background", "reset background", "default background")) { JayAppearanceManager.reset(context); return "Jay's background has been restored to the default, Sir."; }
         if (containsAny(text, "change background", "change the background", "background color", "background colour", "make the background", "badilisha background")) {
             String color = extractBackgroundColor(text);
             if (color == null) return "Which background color would you like, Sir? You can say blue, purple, cyan, green, red, black, or a hex color such as #10152F.";

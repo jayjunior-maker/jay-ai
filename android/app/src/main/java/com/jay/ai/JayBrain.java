@@ -6,15 +6,19 @@ public class JayBrain {
     private final JayDatabase database;
     private final JayApiClient apiClient;
     private final JayLocalCommandManager localCommands;
+    private final JayLearningManager learningManager;
 
     public JayBrain(Context context) {
         this.database = new JayDatabase(context);
         this.apiClient = new JayApiClient();
         this.localCommands = new JayLocalCommandManager(context);
+        this.learningManager = new JayLearningManager(context);
     }
 
     public String think(String input) {
         if (input == null || input.trim().isEmpty()) return "I'm here. Tell me what you would like me to do, Sir.";
+
+        if (learningManager.learnFromCommand(input)) return learningManager.learningResponse();
 
         String math = JayMathEngine.trySolve(input);
         if (math != null) return math;
@@ -37,6 +41,7 @@ public class JayBrain {
         if (containsAny(text, "are you online", "are you still online", "online status", "upo online")) return "ONLINE_STATUS";
         if (containsAny(text, "remember", "kumbuka", "save this", "hifadhi hii")) { database.saveMemory("last_request", input); return "Sure, Sir. I've saved that in my local memory."; }
         if (containsAny(text, "what did i tell you", "what did i ask", "unakumbuka nini")) { String memory = database.getMemory("last_request"); return memory == null ? "I don't have anything saved in that memory yet, Sir." : "I remember you said: " + memory; }
+        if (containsAny(text, "what have you learned", "what did you learn", "what do you know about me", "umejifunza nini kuhusu mimi")) return "Sir, I learn only what you explicitly ask me to remember. I keep those memories locally on this device.";
         if (containsAny(text, "open settings", "fungua settings", "fungua mipangilio")) return "OPEN_SETTINGS";
         if (containsAny(text, "open phone", "open dialer", "fungua simu", "fungua dialer")) return "OPEN_PHONE";
         if (containsAny(text, "open calendar", "fungua calendar", "fungua kalenda", "kalenda")) return "OPEN_CALENDAR";

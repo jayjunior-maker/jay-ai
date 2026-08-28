@@ -8,12 +8,14 @@ public class JayBrain {
     private final JayApiClient apiClient;
     private final JayLocalCommandManager localCommands;
     private final JayLearningManager learningManager;
+    private final JayVlcController musicController;
 
     public JayBrain(Context context) {
         this.database = new JayDatabase(context);
         this.apiClient = new JayApiClient();
         this.localCommands = new JayLocalCommandManager(context);
         this.learningManager = new JayLearningManager(context);
+        this.musicController = new JayVlcController(context);
     }
 
     public String think(String input) {
@@ -21,6 +23,22 @@ public class JayBrain {
         if (learningManager.learnFromCommand(input)) return learningManager.learningResponse();
         String math = JayMathEngine.trySolve(input);
         if (math != null) return math;
+
+        String text = input.trim().toLowerCase(Locale.ROOT);
+        // Handle media commands locally before any online fallback. This keeps
+        // playback controls working when the phone has no internet connection.
+        if (text.contains("vlc") && (text.contains("play") || text.contains("open"))) {
+            String vlc = musicController.openVlc();
+            if (!vlc.startsWith("VLC is not installed")) return vlc;
+        }
+        JayMusicCommandMatcher.Action musicAction = JayMusicCommandMatcher.match(text);
+        if (musicAction != JayMusicCommandMatcher.Action.NONE) {
+            String media = musicController.mediaCommand(musicAction);
+            if (media != null && !media.trim().isEmpty()) {
+                learningManager.observeCommand(input);
+                return media;
+            }
+        }
 
         // Understand natural language first, then hand the safe canonical action to the
         // existing local executor. Understanding itself never performs a device action.
@@ -36,7 +54,6 @@ public class JayBrain {
 
         String local = localCommands.handle(input);
         if (local != null && !local.trim().isEmpty()) { learningManager.observeCommand(input); return local; }
-        String text = input.trim().toLowerCase(Locale.ROOT);
         if (containsAny(text,"repeat","again","rudia","tena")) return "REPEAT_LAST";
         if (containsAny(text,"hello","hi","hey","habari","mambo","niaje","sasa")) return "Hello. Jay is ready.";
         if (containsAny(text,"who are you","what are you","wewe ni nani","jay ni nani")) return "I'm Jay, your personal AI assistant.";
@@ -60,8 +77,6 @@ public class JayBrain {
         if (r == null) return null;
         switch (r.intent) {
             case OPEN_SETTINGS:
-                // Settings is deliberately handled by MainActivity so Jay can enter
-                // follow-up mode after opening the Settings app.
                 if (r.steps.isEmpty()) return "open settings";
                 return "open settings";
             case OPEN_APP:

@@ -132,7 +132,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private boolean handleAppearanceCommand(String message){
         String lower=message.toLowerCase(Locale.ROOT).trim();
         if(lower.contains("change wallpaper")||lower.contains("change the wallpaper")||lower.equals("wallpaper")){
-            try{Intent intent=new Intent(Intent.ACTION_CHANGE_LIVE_WALLPAPER);intent.setAction(Intent.ACTION_SET_WALLPAPER);startActivity(Intent.createChooser(intent,"Choose wallpaper"));reply("Opening the wallpaper selector, Sir.");}catch(Exception e){try{startActivity(new Intent(Intent.ACTION_SET_WALLPAPER));reply("Opening the wallpaper selector, Sir.");}catch(Exception ignored){reply("Sir, I couldn't open the wallpaper selector.");}}return true;
+            try{Intent intent=new Intent(Intent.ACTION_SET_WALLPAPER);startActivity(Intent.createChooser(intent,"Choose wallpaper"));reply("Opening the wallpaper selector, Sir.");}catch(Exception e){reply("Sir, I couldn't open the wallpaper selector.");}return true;
         }
         String[] colors={"black","blue","purple","red","green","cyan","dark","default"};
         for(String color:colors){

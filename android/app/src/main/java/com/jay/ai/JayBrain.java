@@ -21,6 +21,19 @@ public class JayBrain {
         if (learningManager.learnFromCommand(input)) return learningManager.learningResponse();
         String math = JayMathEngine.trySolve(input);
         if (math != null) return math;
+
+        // Understand natural language first, then hand the safe canonical action to the
+        // existing local executor. Understanding itself never performs a device action.
+        JayCommandUnderstanding.Result understood = JayCommandUnderstanding.understand(input);
+        String canonical = canonicalCommand(understood);
+        if (canonical != null) {
+            String local = localCommands.handle(canonical);
+            if (local != null && !local.trim().isEmpty()) {
+                learningManager.observeCommand(input);
+                return local;
+            }
+        }
+
         String local = localCommands.handle(input);
         if (local != null && !local.trim().isEmpty()) { learningManager.observeCommand(input); return local; }
         String text = input.trim().toLowerCase(Locale.ROOT);
@@ -42,6 +55,50 @@ public class JayBrain {
         if (containsAny(text,"kiswahili","swahili","sheng")) return "I understand English, Kiswahili and Sheng.";
         return "ONLINE_REQUIRED";
     }
+
+    private String canonicalCommand(JayCommandUnderstanding.Result r) {
+        if (r == null) return null;
+        switch (r.intent) {
+            case OPEN_SETTINGS:
+                // Settings is deliberately handled by MainActivity so Jay can enter
+                // follow-up mode after opening the Settings app.
+                if (r.steps.isEmpty()) return "open settings";
+                return "open settings";
+            case OPEN_APP:
+                return "open " + r.target;
+            case PLAY_MUSIC:
+                return r.target == null || r.target.isEmpty() ? "play music" : "play " + r.target;
+            case STOP_MUSIC:
+                return "stop music";
+            case PAUSE_MUSIC:
+                return "pause music";
+            case RESUME_MUSIC:
+                return "resume music";
+            case NEXT_MUSIC:
+                return "next music";
+            case PREVIOUS_MUSIC:
+                return "previous music";
+            case CALL_CONTACT:
+                return "call " + r.target;
+            case SEND_MESSAGE:
+                return "whatsapp text " + r.target + " saying " + r.message;
+            case SET_ALARM:
+                return "set alarm for " + r.target;
+            case CANCEL_ALARM:
+                return r.target.isEmpty() ? "cancel alarm" : "cancel alarm for " + r.target;
+            case NETWORK_STATUS:
+                return "network status";
+            case DEVICE_NAVIGATION:
+                return "open " + r.target;
+            case CLEAR_CHAT:
+            case CHECK_UPDATE:
+            case MPESA_BALANCE:
+            case UNKNOWN:
+            default:
+                return null;
+        }
+    }
+
     public void askOnline(String message, JayApiClient.Callback callback) { if(message==null||message.trim().isEmpty()){callback.onError("Empty message.");return;}apiClient.chat(message.trim(),callback); }
     private boolean containsAny(String text,String...words){for(String word:words)if(text.contains(word))return true;return false;}
 }

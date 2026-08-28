@@ -29,7 +29,8 @@ public class JayBackgroundService extends Service {
 
     @Override public void onCreate() {
         super.onCreate();
-        deviceLocked = !((android.os.PowerManager) getSystemService(POWER_SERVICE)).isInteractive();
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+        deviceLocked = pm != null && !pm.isInteractive();
         createNotificationChannel();
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
@@ -37,15 +38,18 @@ public class JayBackgroundService extends Service {
                 : PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         startForeground(NOTIFICATION_ID, new Notification.Builder(this, CHANNEL_ID)
                 .setContentTitle("Jay is active")
-                .setContentText("Say 'Jay' to wake your assistant. Protected actions require the device/admin authentication.")
+                .setContentText("Say 'Jay' to wake your assistant. Protected actions require confirmation.")
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentIntent(pendingIntent).setOngoing(true).build());
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) registerReceiver(lockStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        else registerReceiver(lockStateReceiver, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(lockStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(lockStateReceiver, filter);
+        }
 
         wakeWordManager = new JayWakeWordManager(this, new JayWakeWordManager.Listener() {
             @Override public void onWakeWordDetected() {

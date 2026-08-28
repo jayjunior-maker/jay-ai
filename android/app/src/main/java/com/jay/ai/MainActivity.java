@@ -36,6 +36,7 @@ public class MainActivity extends Activity
 
     private JayBrain jayBrain;
     private JayDatabase jayDatabase;
+    private JayConversationManager jayConversationManager;
 
     private TextView jayStatus;
     private TextView conversation;
@@ -65,6 +66,9 @@ public class MainActivity extends Activity
         jayBrain =
                 new JayBrain(this);
 
+        jayConversationManager =
+                new JayConversationManager();
+
         jayVoice =
                 new TextToSpeech(
                         this,
@@ -74,6 +78,78 @@ public class MainActivity extends Activity
         buildJayInterface();
 
         setupSpeechRecognizer();
+
+        announceStartupStatus();
+    }
+
+    private boolean isNetworkAvailable() {
+        try {
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager)
+                            getSystemService(CONNECTIVITY_SERVICE);
+
+            if (cm == null) {
+                return false;
+            }
+
+            android.net.Network network =
+                    cm.getActiveNetwork();
+
+            if (network == null) {
+                return false;
+            }
+
+            android.net.NetworkCapabilities capabilities =
+                    cm.getNetworkCapabilities(network);
+
+            return capabilities != null &&
+                    capabilities.hasCapability(
+                            android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET
+                    );
+
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void updateConnectivityStatus(boolean announce) {
+        boolean online = isNetworkAvailable();
+
+        if (jayStatus != null) {
+            jayStatus.setText(
+                    online
+                            ? "● JAY ONLINE"
+                            : "● JAY OFFLINE"
+            );
+        }
+
+        if (announce && jayVoice != null && voiceReady) {
+            speak(
+                    jayConversationManager.getStartupGreeting(online)
+            );
+        }
+    }
+
+    private void announceStartupStatus() {
+        updateConnectivityStatus(false);
+
+        new android.os.Handler(
+                android.os.Looper.getMainLooper()
+        ).postDelayed(
+                () -> {
+                    boolean online = isNetworkAvailable();
+
+                    updateConnectivityStatus(false);
+
+                    if (voiceReady) {
+                        speak(
+                                jayConversationManager
+                                        .getStartupGreeting(online)
+                        );
+                    }
+                },
+                700
+        );
     }
 
     private void buildJayInterface() {
@@ -154,9 +230,7 @@ public class MainActivity extends Activity
         jayStatus =
                 new TextView(this);
 
-        jayStatus.setText(
-                "● Jay online"
-        );
+        updateConnectivityStatus(false);
 
         jayStatus.setTextColor(
                 Color.WHITE
@@ -233,7 +307,11 @@ public class MainActivity extends Activity
                 new TextView(this);
 
         conversation.setText(
-                "Jay: Good morning, Sir. I am ready.\n\n"
+                "Jay: " +
+                        jayConversationManager.getStartupGreeting(
+                                isNetworkAvailable()
+                        ) +
+                        "\n\n"
         );
 
         conversation.setTextColor(
@@ -664,7 +742,7 @@ public class MainActivity extends Activity
                 response.trim().isEmpty()) {
 
             response =
-                    "I couldn't process that request, Sir.";
+                    jayConversationManager.friendlyUnknown();
         }
 
         // =====================================================

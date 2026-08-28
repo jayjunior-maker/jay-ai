@@ -1,5 +1,4 @@
 package com.jay.ai;
-
 import android.content.Context;
 import java.util.Locale;
 
@@ -34,6 +33,13 @@ public class JayBrain {
 
         if (containsAny(text, "weather", "what's the weather", "what is the weather", "hali ya hewa"))
             return "WEATHER_REQUIRED";
+
+        if (containsAny(text, "change voice", "change your voice", "different voice", "voice change", "badilisha sauti"))
+            return "Sir, Jay's voice is currently male, low and calm. A voice selector is not connected yet, so I won't pretend that I changed it.";
+
+        if (containsAny(text, "what can you see", "what do you see", "tell me what you see", "what are you seeing",
+                "look at this", "unaona nini", "niambie unaona nini"))
+            return "Sir, I can open the camera locally, but live camera vision analysis is not connected yet. I won't pretend that I can see an image when I cannot.";
 
         if (containsAny(text, "change background", "change the background", "background", "badilisha background"))
             return "Sir, the background editor is not connected yet. I won't pretend that I changed it.";

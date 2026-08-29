@@ -28,6 +28,29 @@ public class JayBrain {
 
         String text = input.trim().toLowerCase(Locale.ROOT);
 
+        // Phone actions that have a deterministic local implementation must be
+        // handled before the online fallback. This also supports natural phrases
+        // such as "open WhatsApp and text Kihara hi" without losing the action
+        // because a generic intent parser classified the whole sentence as an app.
+        if (text.contains("whatsapp") && (text.contains("text ") || text.contains("message ") || text.contains("send "))) {
+            String result = localCommands.handle(input);
+            if (result != null && !result.trim().isEmpty()) {
+                learningManager.observeCommand(input);
+                return result;
+            }
+        }
+
+        if (text.equals("call") || text.equals("make a call") || text.equals("place a call") || text.equals("piga simu") || text.equals("nipigie simu")) {
+            return "Who would you like me to call, Sir?";
+        }
+        if (text.startsWith("call ") || text.startsWith("piga simu ") || text.startsWith("nipigie simu ")) {
+            String result = localCommands.handle(input);
+            if (result != null && !result.trim().isEmpty()) {
+                learningManager.observeCommand(input);
+                return result;
+            }
+        }
+
         // Alarms are a local phone action. Handle them before the normal local
         // executor and before any online fallback so offline Jay can set them.
         if (isAlarmRequest(text)) {
@@ -37,6 +60,7 @@ public class JayBrain {
                 learningManager.observeCommand(input);
                 return alarm;
             }
+            return "What time should I set the alarm for, Sir?";
         }
 
         // Handle media commands locally before any online fallback. This keeps

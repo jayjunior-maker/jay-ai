@@ -88,6 +88,6 @@ public final class JayLocalCommandManager {
  private String openDialer(){try{context.startActivity(new Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));return "Opening the phone.";}catch(Exception e){return "I couldn't open the phone.";}}
  private String whatsappMessage(String original){return "WhatsApp messaging is not yet implemented.";}
  private String smsMessage(String original){return "SMS messaging is not yet implemented.";}
- private String callContact(String name){return callManager.call(name);}
+ private String callContact(String name){String result=contactManager.findPhoneNumber(name);if(result.startsWith("CONTACT_FOUND|")){String[] parts=result.split("\\|",3);if(parts.length==3)return callManager.callNumber(parts[2]);}return result;}
  private boolean contains(String t,String...xs){for(String x:xs)if(t.contains(x))return true;return false;}
 }

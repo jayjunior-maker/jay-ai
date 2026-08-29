@@ -16,7 +16,11 @@ class JayApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.get_json()
         self.assertEqual(body["status"], "ok")
-        self.assertFalse(body["external_ai_required"])
+        self.assertIn("external_ai_required", body)
+        self.assertEqual(
+            body["external_ai_required"],
+            bool(os.environ.get("GEMINI_API_KEY")),
+        )
 
     def test_local_chat(self):
         response = self.client.post("/api/chat", json={"message": "Hello Jay"})

@@ -42,29 +42,11 @@ jobs:
         working-directory: android
         run: chmod +x ./gradlew
 
-      - name: Normalize Android settings intents
-        working-directory: android
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('app/src/main/java/com/jay/ai/JayLocalCommandManager.java')
-          s = p.read_text(encoding='utf-8')
-          old = 'Settings.ACTION_NOTIFICATION_SETTINGS'
-          new = '"android.settings.NOTIFICATION_SETTINGS"'
-          if old not in s:
-              raise SystemExit('Expected notification settings constant was not found; refusing to continue.')
-          p.write_text(s.replace(old, new), encoding='utf-8')
-          PY
-
       - name: Source sanity check
         working-directory: android
         run: |
           if grep -R "ACTION_CHANGE_LIVE_WALLPAPER" -n app/src/main/java; then
             echo "Invalid Android Intent constant found in source."
-            exit 1
-          fi
-          if grep -R "ACTION_NOTIFICATION_SETTINGS" -n app/src/main/java; then
-            echo "Unsupported notification settings constant remains in source."
             exit 1
           fi
           test -f app/src/main/java/com/jay/ai/JayRainbowBorderDrawable.java

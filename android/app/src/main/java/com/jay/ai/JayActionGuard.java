@@ -3,14 +3,7 @@ package com.jay.ai;
 import android.os.Handler;
 import android.os.Looper;
 
-/**
- * Safety gate for actions that can change or delete device data/state.
- *
- * The five-second delay is NOT user authorization. The caller must explicitly
- * call approve() after the user has said yes. If the user says no, call deny().
- * When the five-second window expires, the pending action is cancelled and
- * approval is no longer possible for that request.
- */
+/** Safety gate for actions that can change or delete device data/state. */
 public final class JayActionGuard {
     public interface Callback {
         void onConfirmed();
@@ -24,99 +17,72 @@ public final class JayActionGuard {
     private boolean waiting;
     private boolean authorizationRequested;
 
-    public synchronized boolean isWaiting() {
-        return waiting;
-    }
+    public synchronized boolean isWaiting() { return waiting; }
+    public synchronized boolean isAuthorizationRequested() { return authorizationRequested; }
 
-    public synchronized boolean isAuthorizationRequested() {
-        return authorizationRequested;
-    }
+    /** Starts a five-second safety window; it never executes automatically. */
+    public synchronized void requestConfirmation(Callback newCallback) {
+        cancelPending();
+        this.callback = newCallback;
+        this.authorizationRequested = newCallback != null;
+        this.waiting = newCallback != null;
+        if (newCallback == null) return;
 
-    /**
-     * Starts the safety window. This never executes the action automatically.
-     * The caller must obtain explicit user approval and then call approve().
-     */
-    public synchronized void requestConfirmation(Callback callback) {
-        cancelPending(false);
-        this.callback = callback;
-        this.authorizationRequested = true;
-        this.waiting = true;
-
+        final Callback timeoutCallback = newCallback;
         timeout = () -> {
-            Callback cb;
             synchronized (JayActionGuard.this) {
-                waiting = false;
-                authorizationRequested = false;
-                timeout = null;
-                cb = callback;
+                if (callback != timeoutCallback || !authorizationRequested) return;
                 callback = null;
+                authorizationRequested = false;
+                waiting = false;
+                timeout = null;
             }
-            if (cb != null) cb.onCancelled();
+            timeoutCallback.onCancelled();
         };
         handler.postDelayed(timeout, CONFIRMATION_DELAY_MS);
     }
 
-    /** Execute the guarded action only after explicit user approval. */
+    /** Execute only after explicit approval while the request is active. */
     public void approve() {
         Callback cb;
         synchronized (this) {
-            if (!authorizationRequested || !waiting) return;
-            cancelTimeout();
-            authorizationRequested = false;
-            waiting = false;
+            if (!authorizationRequested || !waiting || callback == null) return;
+            cancelTimeoutLocked();
             cb = callback;
             callback = null;
+            authorizationRequested = false;
+            waiting = false;
         }
-        if (cb != null) cb.onConfirmed();
+        cb.onConfirmed();
     }
 
-    /** Explicitly deny the pending action. */
-    public void deny() {
+    public void deny() { cancelAndNotify(); }
+    public void cancel() { cancelAndNotify(); }
+
+    private void cancelAndNotify() {
         Callback cb;
         synchronized (this) {
-            if (!authorizationRequested) return;
-            cancelTimeout();
-            authorizationRequested = false;
-            waiting = false;
+            if (!authorizationRequested || callback == null) return;
+            cancelTimeoutLocked();
             cb = callback;
             callback = null;
-        }
-        if (cb != null) cb.onCancelled();
-    }
-
-    /** Cancel the pending action without executing it. */
-    public void cancel() {
-        Callback cb;
-        synchronized (this) {
-            if (!authorizationRequested) return;
-            cancelTimeout();
             authorizationRequested = false;
             waiting = false;
-            cb = callback;
-            callback = null;
         }
-        if (cb != null) cb.onCancelled();
+        cb.onCancelled();
     }
 
-    private synchronized void cancelTimeout() {
-        if (timeout != null) {
-            handler.removeCallbacks(timeout);
-            timeout = null;
-        }
-    }
-
-    private synchronized void cancelPending(boolean notify) {
-        if (timeout != null) {
-            handler.removeCallbacks(timeout);
-            timeout = null;
-        }
-        Callback cb = callback;
-        boolean wasAuthorized = authorizationRequested;
+    private synchronized void cancelPending() {
+        cancelTimeoutLocked();
         callback = null;
         authorizationRequested = false;
         waiting = false;
-        if (notify && wasAuthorized && cb != null) {
-            cb.onCancelled();
+    }
+
+    private void cancelTimeoutLocked() {
+        if (timeout != null) {
+            handler.removeCallbacks(timeout);
+            timeout = null;
         }
     }
 }

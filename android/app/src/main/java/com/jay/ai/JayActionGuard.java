@@ -23,21 +23,22 @@ public final class JayActionGuard {
     /** Starts a five-second safety window; it never executes automatically. */
     public synchronized void requestConfirmation(Callback newCallback) {
         cancelPending();
-        this.callback = newCallback;
-        this.authorizationRequested = newCallback != null;
-        this.waiting = newCallback != null;
         if (newCallback == null) return;
 
-        final Callback timeoutCallback = newCallback;
+        callback = newCallback;
+        authorizationRequested = true;
+        waiting = true;
+
+        final Callback requestCallback = newCallback;
         timeout = () -> {
             synchronized (JayActionGuard.this) {
-                if (callback != timeoutCallback || !authorizationRequested) return;
+                if (callback != requestCallback || !authorizationRequested) return;
                 callback = null;
                 authorizationRequested = false;
                 waiting = false;
                 timeout = null;
             }
-            timeoutCallback.onCancelled();
+            requestCallback.onCancelled();
         };
         handler.postDelayed(timeout, CONFIRMATION_DELAY_MS);
     }
@@ -56,7 +57,10 @@ public final class JayActionGuard {
         cb.onConfirmed();
     }
 
+    /** Explicitly deny the pending action. */
     public void deny() { cancelAndNotify(); }
+
+    /** Cancel the pending action without executing it. */
     public void cancel() { cancelAndNotify(); }
 
     private void cancelAndNotify() {

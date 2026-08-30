@@ -6,8 +6,10 @@ import android.os.Looper;
 /**
  * Safety gate for actions that can change or delete device data/state.
  *
- * The five-second delay is NOT user authorization.  A caller must explicitly
- * call approve() after the user has said yes.  If the user says no, call deny().
+ * The five-second delay is NOT user authorization. The caller must explicitly
+ * call approve() after the user has said yes. If the user says no, call deny().
+ * When the five-second window expires, the pending action is cancelled and
+ * approval is no longer possible for that request.
  */
 public final class JayActionGuard {
     public interface Callback {
@@ -41,11 +43,15 @@ public final class JayActionGuard {
         this.waiting = true;
 
         timeout = () -> {
+            Callback cb;
             synchronized (JayActionGuard.this) {
                 waiting = false;
+                authorizationRequested = false;
                 timeout = null;
+                cb = callback;
+                callback = null;
             }
-            // The action remains blocked until approve() is explicitly called.
+            if (cb != null) cb.onCancelled();
         };
         handler.postDelayed(timeout, CONFIRMATION_DELAY_MS);
     }
@@ -54,7 +60,7 @@ public final class JayActionGuard {
     public void approve() {
         Callback cb;
         synchronized (this) {
-            if (!authorizationRequested) return;
+            if (!authorizationRequested || !waiting) return;
             cancelTimeout();
             authorizationRequested = false;
             waiting = false;
@@ -78,6 +84,7 @@ public final class JayActionGuard {
         if (cb != null) cb.onCancelled();
     }
 
+    /** Cancel the pending action without executing it. */
     public void cancel() {
         Callback cb;
         synchronized (this) {

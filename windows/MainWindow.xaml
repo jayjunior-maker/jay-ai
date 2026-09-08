@@ -16,7 +16,7 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,18">
             <StackPanel DockPanel.Dock="Left">
                 <TextBlock Text="JAY" FontSize="34" FontWeight="Bold" Foreground="{StaticResource JayAccent}"/>
-                <TextBlock Text="WINDOWS AI ASSISTANT" FontSize="12" Opacity="0.7" LetterSpacing="2"/>
+                <TextBlock Text="WINDOWS AI ASSISTANT" FontSize="12" Opacity="0.7"/>
             </StackPanel>
             <Border DockPanel.Dock="Right" Background="#12251D" CornerRadius="14" Padding="12,7" VerticalAlignment="Center">
                 <TextBlock Text="● ONLINE / LOCAL" Foreground="{StaticResource JayAccent}" FontWeight="SemiBold"/>

@@ -1,0 +1,38 @@
+name: Build Jay Windows
+
+on:
+  push:
+    branches: ["main", "windows-jay"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore Jay.Windows.csproj
+
+      - name: Build
+        run: dotnet build Jay.Windows.csproj --configuration Release --no-restore
+
+      - name: Publish self-contained Windows build
+        run: dotnet publish Jay.Windows.csproj --configuration Release --runtime win-x64 --self-contained true --output publish
+
+      - name: Upload Jay Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Jay-Windows-win-x64
+          path: windows/publish/

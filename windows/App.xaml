@@ -1,0 +1,11 @@
+<Application x:Class="Jay.Windows.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <SolidColorBrush x:Key="JayBackground" Color="#070B12" />
+        <SolidColorBrush x:Key="JayPanel" Color="#0D1420" />
+        <SolidColorBrush x:Key="JayAccent" Color="#43F5A0" />
+        <SolidColorBrush x:Key="JayText" Color="#EAF7F0" />
+    </Application.Resources>
+</Application>

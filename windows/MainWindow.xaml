@@ -1,0 +1,50 @@
+<Window x:Class="Jay.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="JAY — Windows AI Assistant"
+        Width="900" Height="650" MinWidth="700" MinHeight="500"
+        Background="{StaticResource JayBackground}"
+        Foreground="{StaticResource JayText}"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,18">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="JAY" FontSize="34" FontWeight="Bold" Foreground="{StaticResource JayAccent}"/>
+                <TextBlock Text="WINDOWS AI ASSISTANT" FontSize="12" Opacity="0.7"/>
+            </StackPanel>
+            <Border DockPanel.Dock="Right" Background="#12251D" CornerRadius="14" Padding="12,7" VerticalAlignment="Center">
+                <TextBlock Text="● ONLINE / LOCAL" Foreground="{StaticResource JayAccent}" FontWeight="SemiBold"/>
+            </Border>
+        </DockPanel>
+
+        <Border Grid.Row="1" Background="{StaticResource JayPanel}" CornerRadius="18" Padding="18">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ConversationPanel"/>
+            </ScrollViewer>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,18,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="110"/>
+                <ColumnDefinition Width="110"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="InputBox" Grid.Column="0" Height="48" Margin="0,0,10,0"
+                     Background="#111B28" Foreground="White" BorderBrush="#294033"
+                     FontSize="16" Padding="14" VerticalContentAlignment="Center"
+                     KeyDown="InputBox_KeyDown" ToolTip="Talk to Jay"/>
+            <Button Grid.Column="1" Content="SEND" Height="48" Margin="0,0,10,0"
+                    Background="#173126" Foreground="{StaticResource JayAccent}" BorderThickness="0"
+                    FontWeight="Bold" Click="SendButton_Click"/>
+            <Button Grid.Column="2" Content="VOICE" Height="48"
+                    Background="{StaticResource JayAccent}" Foreground="#06100B" BorderThickness="0"
+                    FontWeight="Bold" Click="VoiceButton_Click"/>
+        </Grid>
+    </Grid>
+</Window>
